@@ -23,5 +23,41 @@
 ./serve.sh
 # 或指定端口
 ./serve.sh 8888
+```
 
+然后在浏览器访问 `http://127.0.0.1:8765`。
+
+## 📥 批量导入（Excel / CSV）
+
+工具依赖 **SheetJS** 解析表格文件。默认通过 CDN 加载，**离线或内网环境**可按以下步骤使用本地文件：
+
+1. 从 [SheetJS CDN](https://cdn.sheetjs.com/) 下载与 `index.html` 中版本一致的 `xlsx.full.min.js`
+2. 将文件放在与 `index.html` 相同的目录下，命名为 `xlsx.full.min.js`
+3. 在 `index.html` 中**删除**指向 CDN 的 `<script>` 行，并**仅保留**：
+   ```html
+   <script src="./xlsx.full.min.js"></script>
+   ```
+4. 该 `<script>` 须位于 `i18n.js` 之后、`script.js` 之前
+
+支持的列名（中英文均可）：Subject/课程类型、Course Number/课号、Description/课程名称、Percent/百分制、Credits/学分。
+
+## 🔧 开发与校验
+
+- **静态检查**：`npm run smoke` 或 `node tools/smoke-check.mjs` – 校验 vendored 脚本哈希、DOM 关键节点与脚本顺序
+- **语法检查**：`npm run check` – 对 `script.js` 和 `i18n.js` 进行语法检查
+- **CI**：GitHub Actions 在推送到 `main/master` 或 PR 时自动运行 `npm run smoke`
+- 浏览器手动测试：语言切换、批量导入、导出 PNG、隐私模糊等
+
+## 📦 Vendored 脚本
+
+| 文件 | 说明 | SHA-256 |
+|------|------|---------|
+| `html2canvas.min.js` | [html2canvas](https://html2canvas.hertzen.com) **1.4.1**（MIT） | `e87e550794322e574a1fda0c1549a3c70dae5a93d9113417a429016838eab8cb` |
+| `qrcode.min.js` | [davidshimjs/qrcodejs](https://github.com/davidshimjs/qrcodejs) 风格 min | `94a29cf772a183b1673f47cd91b8e80fa0044287eeb47a3c41f71fdac365898a` |
+
+更换 vendor 后请重算哈希并同步更新 `tools/smoke-check.mjs` 与本表。
+
+## 📄 许可
+
+本项目基于 **Apache License, Version 2.0** 发布，详见 [LICENSE](LICENSE)。`index.html` 页头注释中的版权人与本说明一致。
 
