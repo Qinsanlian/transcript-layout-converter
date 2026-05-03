@@ -1,0 +1,446 @@
+<!--
+  Academic Transcript Layout Converter (Second Revision)
+  Copyright 2026 Fisher Hollique
+  Licensed under the Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Transcript Layout Converter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page-wrap">
+    <aside class="editor-panel" lang="en">
+      <h2>For authors</h2>
+      <p class="sidebar-intro-lead">Edits on the left update the transcript in real time. Recommended order: media and identifiers, courses and terms, then export.</p>
+      <div class="sidebar-purpose-note" lang="en">
+        <p><strong>Scope.</strong> English layout and GPA arithmetic only. Does not substitute registrar, CHSI, or reviewer determinations on authenticity.</p>
+        <p><strong>Your responsibility.</strong> Align all data with the authoritative record; confirm seal, bilingual, and print/PDF requirements with your office—policies differ, confirm in writing where needed.</p>
+        <p><strong>Export.</strong> PNG captures the transcript page (including the security block), not the sidebar. Legal acknowledgment below is required before export.</p>
+      </div>
+      <details class="editor-supplemental-disclosure">
+        <summary class="editor-supplemental-summary">Privacy, blur preview, and local audit log</summary>
+        <div class="privacy-gentle-note" role="note">
+          <p class="privacy-gentle-note-title">Privacy</p>
+          <p class="privacy-gentle-note-body">
+            Work in a private environment. All processing is local to this browser (comparable to editing a sensitive PDF offline).
+          </p>
+          <p class="privacy-gentle-note-body privacy-gentle-note-body-follow">
+            On a <strong>shared workstation</strong>, clear <strong>site data for this origin</strong> after use (typically under Cookies or site settings).
+          </p>
+        </div>
+        <div class="compliance-log-note" role="note">
+          <p class="compliance-log-note-title">Local audit log</p>
+          <p class="compliance-log-note-body">
+            May retain <strong>hashed</strong> event metadata (version, acknowledgments, edits, exports) for your own accountability trail. <strong>No network upload.</strong> Clear site data to remove.
+          </p>
+          <p class="compliance-log-note-body compliance-log-note-body-follow">
+            The <strong>18-digit</strong> field supports layout and a local hash watermark; logs store hashes only, not plaintext. Enter digits you accept on the printed layout; avoid sensitive values on public terminals.
+          </p>
+        </div>
+        <div class="toolbox privacy-preview-toolbox">
+          <label class="ack-line privacy-preview-toggle-label">
+            <input id="privacy-preview-toggle" type="checkbox">
+            <span>Blur preview (shared spaces)</span>
+          </label>
+          <p class="privacy-preview-hint">
+            Masks transcript PII as <strong>***</strong> and softens the photo; sidebar fields remain editable. PNG export temporarily uses full values, then masking restores if this option stays enabled.
+          </p>
+        </div>
+        <div class="export-png-fidelity-note" role="note">
+          <p class="export-png-fidelity-note-title">What PNG contains</p>
+          <p class="export-png-fidelity-note-body">
+            Includes transcript body, security block, and QR only—not the left toolbar. Finalize <strong>English</strong> on the page before export.
+          </p>
+        </div>
+      </details>
+      <div class="toolbox">
+        <label class="tool-label" for="lang-select">Language / 语言</label>
+        <select id="lang-select" aria-label="Display language">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+      </div>
+      <div class="toolbox">
+        <label class="tool-label" for="logo-upload">Institution Logo</label>
+        <input id="logo-upload" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.tif,.tiff,.heic,.heif,image/*">
+      </div>
+      <div class="toolbox">
+        <label class="tool-label" for="center-watermark-upload">Institution Emblem Watermark (Center)</label>
+        <input id="center-watermark-upload" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.tif,.tiff,.heic,.heif,image/*">
+      </div>
+      <div class="toolbox">
+        <label class="tool-label" for="photo-upload">Student Photo</label>
+        <input id="photo-upload" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.tif,.tiff,.heic,.heif,image/*">
+      </div>
+      <div class="toolbox personal-ssn-toolbox">
+        <label class="tool-label" for="personal-ssn-input">Government ID (18-digit)</label>
+        <input id="personal-ssn-input" class="notranslate" translate="no" type="text" maxlength="18" title="Digits only, max 18; layout placeholder and local hash watermark" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" aria-label="Up to 18 digits for layout placeholder and local hash watermark">
+      </div>
+      <div class="toolbox chsi-verify-toolbox">
+        <label class="tool-label" for="chsi-verify-code-input">CHSI online verification code</label>
+        <input id="chsi-verify-code-input" type="text" maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Optional; appears in transcript security block" aria-label="CHSI online verification code shown in transcript security block">
+        <div class="chsi-sidebar-guide" lang="en">
+          <p class="chsi-sidebar-guide-title">CHSI (author)</p>
+          <p><strong>Obtaining the code.</strong> At <a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">chsi.com.cn</a>, open your archive, request an online verification report, and paste the code here. It appears in the transcript security section for reviewers.</p>
+          <p><strong>Submission.</strong> When rules permit, include CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> so reviewers can match code to report.</p>
+        </div>
+      </div>
+      <div class="toolbox">
+        <label class="tool-label" for="term-select">Course rows</label>
+        <select id="term-select">
+          <option value="0">Term 1 (Fall 2024)</option>
+          <option value="1">Term 2 (Spring 2025)</option>
+        </select>
+        <div class="tool-buttons">
+          <button type="button" id="add-course-row">Add Row</button>
+          <button type="button" id="remove-course-row">Remove Last Row</button>
+        </div>
+      </div>
+      <div class="toolbox">
+        <label class="tool-label" for="term-layout-mode">Terms on transcript</label>
+        <select id="term-layout-mode">
+          <option value="two" selected>Two terms</option>
+          <option value="one">Single term (e.g. first-year, one semester)</option>
+        </select>
+        <p class="term-layout-hint" id="term-layout-hint">
+          <strong>Single-term mode</strong> hides the second term. Use <strong>Term season order</strong> below to control which semester appears first (Fall then Spring, or Spring then Fall).
+        </p>
+      </div>
+      <div class="toolbox grade-rules-ref">
+        <label class="tool-label">GPA ladder (auto-recalculation)</label>
+
+        <div class="grade-rules-ref-body">
+          <section class="grade-rules-card">
+            <h4 class="grade-rules-card-title">GPA inputs</h4>
+            <p class="grade-rules-card-text">Only <strong>Percent</strong> and <strong>Credits</strong> enter the GPA calculation. Edits update <strong>Grade Pt</strong>, <strong>Grade</strong>, and <strong>Quality Pts</strong> per the ladder (quality pts = grade pt × credits earned).</p>
+          </section>
+          <section class="grade-rules-card">
+            <h4 class="grade-rules-card-title">Non-calculated columns</h4>
+            <p class="grade-rules-card-text"><strong>Course Type / Course Number / Description</strong> are descriptive only and excluded from formulas.</p>
+          </section>
+          <section class="grade-rules-card">
+            <h4 class="grade-rules-card-title">Per term</h4>
+            <ul class="grade-rules-list">
+              <li><strong>Attempted / Earned / GPA Hours</strong> = sum of credits earned (identical here).</li>
+              <li><strong>Quality Points</strong> = sum of row <strong>Quality Pts</strong>.</li>
+              <li><strong>Term GPA</strong> = Quality Points ÷ GPA Hours.</li>
+            </ul>
+          </section>
+          <section class="grade-rules-card">
+            <h4 class="grade-rules-card-title">Cumulative</h4>
+            <ul class="grade-rules-list">
+              <li>Carry term totals forward in semester order.</li>
+              <li><strong>Cumulative GPA</strong> = cumulative Quality Points ÷ cumulative GPA Hours.</li>
+            </ul>
+          </section>
+        </div>
+
+        <p class="grade-rules-table-caption">Matches transcript footer ladder</p>
+        <table class="grade-rules-table">
+          <thead>
+            <tr><th>Percent band</th><th>Letter</th><th>Grade Point</th></tr>
+          </thead>
+          <tbody id="grade-ladder-sidebar-tbody"></tbody>
+        </table>
+      </div>
+      <div class="toolbox">
+        <label class="tool-label" for="term-order">Term Season Order</label>
+        <select id="term-order">
+          <option value="spring-fall">Spring then Fall</option>
+          <option value="fall-spring">Fall then Spring</option>
+        </select>
+        <label class="tool-label" for="term-year-1">Year for Term 1</label>
+        <input id="term-year-1" type="number" min="2000" max="2100" step="1">
+        <label class="tool-label" for="term-year-2">Year for Term 2</label>
+        <input id="term-year-2" type="number" min="2000" max="2100" step="1">
+      </div>
+      <div class="toolbox">
+        <label class="tool-label">Finalize and export</label>
+        <button type="button" id="regen-doc-id">Regenerate Document ID</button>
+        <button type="button" id="export-png">Export Transcript as PNG</button>
+        <label class="ack-line">
+          <input id="legal-ack" type="checkbox">
+          <span lang="en">I acknowledge legal responsibility for authenticity and lawful use, and I will not use exports to falsely claim eligibility for merchant or education-pricing programmes.</span>
+        </label>
+        <p class="legal-ack-summary-follow" lang="en">
+          <strong>Summary:</strong> You attest that the information is accurate, that use will be lawful, and that exports will not be used to obtain student pricing or benefits without eligibility. This tool <strong>does not</strong> certify academic records; verification remains with your institution and reviewers.
+        </p>
+        <p id="ack-status" class="ack-status">Legal acknowledgment: Pending</p>
+        <p id="export-status" class="verify-result">Export: Ready</p>
+      </div>
+      <div class="toolbox upload-diagnostics-box">
+        <label class="tool-label">Upload status</label>
+        <p id="upload-diagnostics" class="upload-diagnostics status-neutral">Uploads: Ready</p>
+      </div>
+      <details class="editor-supplemental-disclosure security-audit-writer-guide" lang="en">
+        <summary class="editor-supplemental-summary">Security block, UTC, and QR (author reference)</summary>
+        <div class="security-audit-writer-guide-body" role="note">
+          <p><strong>Audience.</strong> Transcript security text targets reviewers; this section covers timing semantics, limitations, and troubleshooting.</p>
+          <p><strong>Timestamps.</strong> Fingerprint and PNG-queue lines use the <strong>browser local clock</strong>. <strong>Export reference time (UTC)</strong> is queried at export from a public UTC API. None constitutes legal or institutional attestation.</p>
+          <p><strong>UTC unavailable.</strong> Offline messaging may appear; export continues. Use local timestamps and the integrity hash.</p>
+          <p><strong>Print cues.</strong> VOID microprint, watermark, and pattern support visual screening; official stock and seals follow registrar policy.</p>
+          <p><strong>QR payload.</strong> Encodes export-bound snapshots (form fields, HTML digest, log references) for file-to-export reconciliation only—not certification. If the QR area is blank, see below.</p>
+          <div id="export-qr-fallback-wrap" class="export-qr-fallback-wrap" hidden>
+            <p id="export-qr-fallback-lib" class="export-qr-fallback-note export-qr-fallback-lib-note" lang="en" hidden><strong>QR library missing:</strong> place <code>qrcode.min.js</code> (not qrious) next to <code>index.html</code> and open via HTTP (not <code>file://</code>).</p>
+            <p id="export-qr-fallback-render" class="export-qr-fallback-note export-qr-fallback-render-note" lang="en" hidden><strong>QR render blocked:</strong> tracking protection or strict canvas policies may prevent drawing. Try relaxing protections for this origin, allowlisting the site, or serving from <code>127.0.0.1</code> / <code>localhost</code>.</p>
+          </div>
+        </div>
+      </details>
+      <form id="editor-form"></form>
+    </aside>
+
+    <article class="transcript-page notranslate" id="transcript-page" lang="en" translate="no" dir="ltr">
+      <div class="security-pattern" aria-hidden="true"></div>
+      <div class="watermark-stack notranslate" aria-hidden="true" translate="no">
+        <div class="watermark-layer notranslate" aria-hidden="true" translate="no">
+          THIS FILE IS ONLY FOR PERSONAL EDUCATION APPLICATION / NON-COMMERCIAL DISCOUNT USE.
+          I ACKNOWLEDGE MY ACTIONS, WARRANT THAT MY PERSONAL INFORMATION IS TRUE AND VALID,
+          AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.
+        </div>
+      </div>
+      <div class="watermark-stack watermark-stack--rot180 notranslate" aria-hidden="true" translate="no">
+        <div class="watermark-layer notranslate" aria-hidden="true" translate="no">
+          THIS FILE IS ONLY FOR PERSONAL EDUCATION APPLICATION / NON-COMMERCIAL DISCOUNT USE.
+          I ACKNOWLEDGE MY ACTIONS, WARRANT THAT MY PERSONAL INFORMATION IS TRUE AND VALID,
+          AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.
+        </div>
+      </div>
+      <div class="center-watermark-image" aria-hidden="true">
+        <img id="center-watermark-preview" alt="Center watermark preview">
+      </div>
+
+      <header class="header">
+        <div class="logo-box">
+          <img id="logo-preview" alt="Institution logo preview">
+          <span id="logo-placeholder">LOGO</span>
+        </div>
+        <div class="school-meta centered">
+          <h1 data-edit-label="Institution Name"><span class="inline-edit-target">Fayette Institute of Technology</span></h1>
+          <p data-edit-label="Issuing Office"><span class="inline-edit-target">Office of the University Registrar</span></p>
+          <p data-edit-label="Document Title"><span class="inline-edit-target">Academic Transcript</span></p>
+          <p class="institution-address" data-edit-label="Institution Address"><span class="inline-edit-target">88 West Academic Loop, Boston, MA 02115, USA</span></p>
+        </div>
+        <div class="header-spacer" aria-hidden="true"></div>
+      </header>
+
+      <section class="perimeter-warning notranslate" id="perimeter-warning" translate="no" data-edit-label="Perimeter Warning" data-protected="true">
+        WARNING: SECURITY PAPER BACKGROUND - VOID IF ALTERED OR REPRODUCED WITHOUT AUTHORIZATION
+      </section>
+
+      <section class="security-audit notranslate" translate="no">
+        <p><strong>Document ID:</strong> <span id="document-id">Pending</span></p>
+
+        <div class="security-audit-subsection security-audit-chsi">
+          <p><strong>Identity and enrollment (CHSI)</strong></p>
+          <p>For PRC credentials, reviewers may corroborate identity and enrollment via the China Higher Education Student Information and Career Center (<a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>).</p>
+          <p class="audit-inline-note"><strong>Reviewer procedure:</strong> On CHSI, use <em>Online Verification</em> with the code below. CHSI is authoritative; this sheet is user-produced layout only.</p>
+          <p class="chsi-verify-line-transcript"><strong>CHSI online verification code:</strong> <code id="chsi-verify-code-display" class="chsi-verify-code-display">Not provided</code></p>
+          <p class="audit-inline-note"><strong>Filing:</strong> When permitted, submit with CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> for a single review pass.</p>
+        </div>
+
+        <p><strong>Integrity check (SHA-256):</strong> <span id="integrity-hash">Pending</span></p>
+        <p><strong>Last exported PNG digest:</strong> <span id="export-file-hash">Pending</span></p>
+        <p class="audit-inline-note"><strong>Integrity hash (reviewers):</strong> Truncated SHA-256 of editable content at the times below. Supports reconciliation with another copy or internal records; <strong>not</strong> university- or CHSI-issued.</p>
+        <p class="audit-time-line"><strong>Layout fingerprint updated (local time):</strong> <span id="transcript-last-edited-display">—</span></p>
+        <p class="audit-time-line"><strong>PNG export snapshot queued (local time):</strong> <span id="transcript-export-snapshot-display">—</span></p>
+        <p class="audit-time-line"><strong>Export reference time (UTC, public time service):</strong> <span id="trusted-timestamp">Not yet fetched</span></p>
+        <p class="audit-inline-note"><strong>UTC line:</strong> Written at PNG export from a public UTC API to align with the local-time rows above. It is <strong>not</strong> legal or institutional time attestation. If the transcript shows <strong>UTC unavailable (offline)</strong>, rely on the local timestamps and hash only.</p>
+
+        <div class="security-audit-subsection security-audit-physical-layer">
+          <p><strong>Print / tamper cues (informational)</strong></p>
+          <p>Background microprint, watermark text, and faint VOID tiling support visual screening for edits or poor reproductions; official stock, seals, and anti-counterfeit measures remain as defined by the issuing registrar.</p>
+        </div>
+
+        <p class="audit-trust-short"><strong>Scope:</strong> Document ID, hashes, UTC line, CHSI code, and QR carry <strong>tool-generated metadata</strong> for handling and spot checks only. They do <strong>not</strong> replace registrar certification, CHSI outcomes, or any formal authenticity determination.</p>
+
+        <div class="export-qr-row notranslate" translate="no" lang="en">
+          <div>
+            <p class="export-qr-caption"><strong>Integrity QR</strong> (payload bound to this export)</p>
+            <p class="export-qr-caption-follow"><strong>Reviewer use:</strong> Encodes an export-bound snapshot (sidebar fields, transcript HTML digest, compliance log references) to confirm this file matches that export. <strong>Supplementary only</strong>—not accreditation, transcript validation, or a substitute for CHSI or institutional verification.</p>
+          </div>
+          <div id="export-integrity-qr" class="export-integrity-qr" role="img" aria-label="Export integrity QR code"></div>
+        </div>
+      </section>
+
+      <section class="student-box">
+        <div class="student-layout">
+          <div class="photo-box">
+            <img id="student-photo-preview" alt="Student photo preview">
+            <span id="photo-placeholder">Photo</span>
+          </div>
+          <div class="info-column">
+            <p data-edit-label="Student Name"><strong>Name:</strong> <span data-pii-mask data-pii-key="studentName">Fisher Hollique</span></p>
+            <p data-edit-label="Student ID"><strong>Student ID:</strong> <span data-pii-mask data-pii-key="studentId">167461-9384</span></p>
+            <p data-edit-label="Date of Birth"><strong>Date of Birth:</strong> <span data-pii-mask data-pii-key="dateOfBirth">09/24/2004</span></p>
+            <p data-edit-label="Date Issued"><strong>Date Issued:</strong> <span data-pii-mask data-pii-key="dateIssued">04/11/2026</span></p>
+          </div>
+          <div class="info-column">
+            <p data-edit-label="Program"><strong>Program:</strong> <span data-pii-mask data-pii-key="program">Bachelor of Science</span></p>
+            <p data-edit-label="College"><strong>College:</strong> <span data-pii-mask data-pii-key="college">College of Science and Engineering</span></p>
+            <p data-edit-label="Major"><strong>Major:</strong> <span data-pii-mask data-pii-key="major">Computer Science</span></p>
+            <p data-edit-label="Citizenship"><strong>Citizenship:</strong> <span data-pii-mask data-pii-key="citizenship">China</span></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="term-block" data-semester-kind="fall" data-term="Fall 2024">
+        <h2 data-edit-label="Term Title 1"><span class="inline-edit-target">Fall 2024</span></h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Course Type</th>
+              <th>Course Number</th>
+              <th>Description</th>
+              <th class="th-percent">Percent</th>
+              <th>Grade Pt</th>
+              <th>Grade</th>
+              <th>Credits</th>
+              <th>Quality Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-hours="4" data-quality="16">
+              <td>CS</td><td>1428</td><td>Foundations of Computer Science I</td><td class="num">96</td><td class="num">4.0</td><td>A</td><td class="num">4.00</td><td class="num">16.00</td>
+            </tr>
+            <tr data-hours="3" data-quality="12">
+              <td>MATH</td><td>2358</td><td>Discrete Mathematics I</td><td class="num">94</td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
+            </tr>
+            <tr data-hours="3" data-quality="9">
+              <td>CS</td><td>2308</td><td>Foundations of Computer Science II</td><td class="num">86</td><td class="num">3.0</td><td>B</td><td class="num">3.00</td><td class="num">9.00</td>
+            </tr>
+            <tr data-hours="3" data-quality="12">
+              <td>ENG</td><td>1320</td><td>College Writing II</td><td class="num">90</td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
+            </tr>
+            <tr data-hours="3" data-quality="12">
+              <td>COMM</td><td>1310</td><td>Fund. of Human Communication</td><td class="num">92</td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="totals-row">
+          <span><strong>Term Totals</strong></span>
+          <span>Attempted: <strong class="attempted">0.00</strong></span>
+          <span>Earned: <strong class="earned">0.00</strong></span>
+          <span>GPA Hours: <strong class="gpa-hours">0.00</strong></span>
+          <span>Quality Points: <strong class="quality">0.00</strong></span>
+          <span>Term GPA: <strong class="term-gpa">0.00</strong></span>
+        </div>
+      </section>
+
+      <section class="term-block" data-semester-kind="spring" data-term="Spring 2025">
+        <h2 data-edit-label="Term Title 2"><span class="inline-edit-target">Spring 2025</span></h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Course Type</th>
+              <th>Course Number</th>
+              <th>Description</th>
+              <th class="th-percent">Percent</th>
+              <th>Grade Pt</th>
+              <th>Grade</th>
+              <th>Credits</th>
+              <th>Quality Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-hours="3" data-quality="9">
+              <td>MATH</td><td>2358</td><td>Discrete Mathematics I</td><td class="num">82</td><td class="num">2.7</td><td>B-</td><td class="num">3.00</td><td class="num">8.10</td>
+            </tr>
+            <tr data-hours="4" data-quality="12">
+              <td>CS</td><td>1428</td><td>Foundations of Computer Science I</td><td class="num">84</td><td class="num">3.0</td><td>B</td><td class="num">4.00</td><td class="num">12.00</td>
+            </tr>
+            <tr data-hours="3" data-quality="12">
+              <td>HIST</td><td>1310</td><td>History of US to 1877</td><td class="num">91</td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
+            </tr>
+            <tr data-hours="3" data-quality="12">
+              <td>ART</td><td>2313</td><td>Introduction to Fine Arts</td><td class="num">95</td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
+            </tr>
+            <tr data-hours="3" data-quality="12">
+              <td>ENG</td><td>1310</td><td>College Writing I</td><td class="num">93</td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="totals-row">
+          <span><strong>Term Totals</strong></span>
+          <span>Attempted: <strong class="attempted">0.00</strong></span>
+          <span>Earned: <strong class="earned">0.00</strong></span>
+          <span>GPA Hours: <strong class="gpa-hours">0.00</strong></span>
+          <span>Quality Points: <strong class="quality">0.00</strong></span>
+          <span>Term GPA: <strong class="term-gpa">0.00</strong></span>
+        </div>
+      </section>
+
+      <section class="cumulative-box">
+        <div class="totals-row final">
+          <span><strong>Cumulative Totals</strong></span>
+          <span>Attempted: <strong id="cum-attempted">0.00</strong></span>
+          <span>Earned: <strong id="cum-earned">0.00</strong></span>
+          <span>GPA Hours: <strong id="cum-gpa-hours">0.00</strong></span>
+          <span>Quality Points: <strong id="cum-quality">0.00</strong></span>
+          <span>Cumulative GPA: <strong id="cum-gpa">0.00</strong></span>
+        </div>
+        <p class="standing" data-edit-label="Academic Standing" data-computed="true"><span class="inline-edit-target">Academic Standing: Good</span></p>
+        <p class="standing-disclaimer notranslate" translate="no" data-protected="true">Academic Standing is estimated from cumulative GPA using simple demonstration bands in this tool. For layout and sample use only; not an official academic status from any school or authority.</p>
+      </section>
+
+      <section class="certification">
+        <p class="warning-line notranslate" id="tamper-warning-line" translate="no" data-edit-label="Tamper Warning" data-protected="true">Unauthorized alteration is strictly prohibited.</p>
+        <p class="sample-line notranslate" id="legal-confirmation-line" translate="no" data-edit-label="Legal Confirmation" data-protected="true">I confirm this document is true and valid, and I accept all related legal responsibility.</p>
+        <p class="cert-meta" data-edit-label="Certification Institution Line"><span class="inline-edit-target">Institution: Fayette Institute of Technology, 88 West Academic Loop, Boston, MA 02115</span></p>
+        <p class="cert-meta" data-edit-label="Issue And Digital Signature"><span class="inline-edit-target">Date of Issue: 04/11/2026 | Digital Signature Hash: FIT-TRX-SAMPLE-5A8C21F1</span></p>
+        <div class="signature-row">
+          <div class="sign-box"><span data-edit-label="Signature Label"><span class="inline-edit-target">Registrar Signature</span></span></div>
+          <div class="sign-box sign-ssn-box">
+            <span id="personal-ssn-label" class="sign-label-fixed" data-protected="true">Government ID (18-digit)</span><span id="personal-ssn-display" class="sign-ssn-display notranslate" translate="no" aria-hidden="true"></span>
+          </div>
+          <div class="sign-box sign-seal-box"><span id="university-seal" class="notranslate" translate="no" data-protected="true">University Seal
+(see Institutional Authorization below)</span></div>
+        </div>
+      </section>
+
+      <section class="bottom-row">
+        <section class="scale notranslate" id="gpa-policy-scale" translate="no" data-protected="true">
+          <h3 id="gpa-scale-title">Grading Reference (Percent to GPA)</h3>
+
+          <h4 class="scale-subheading" id="percent-letter-heading">Letter-grade ladder (authoritative for calculations)</h4>
+          <table id="percent-letter-scale-table" class="scale-ref-table">
+            <thead>
+              <tr><th>Percent Score</th><th>Letter Grade</th><th>Grade Point</th></tr>
+            </thead>
+            <tbody id="grade-ladder-transcript-tbody"></tbody>
+          </table>
+
+          <p class="conversion-note" id="conversion-note-1">
+            <strong>Computation.</strong> Per row, enter <strong>percent score (0–100)</strong> and <strong>credits earned</strong> only. <strong>Grade point</strong> and <strong>letter grade</strong> are read exclusively from the ladder above (not manually assigned). <strong>Quality points</strong> = grade point × credits. <strong>Term GPA</strong> = sum of quality points ÷ sum of credits for that term. <strong>Cumulative GPA</strong> = sum of quality points ÷ sum of credits across all terms shown. Course type, course number, and description are for identification only and do not enter the GPA formula.
+          </p>
+          <p class="conversion-note" id="conversion-note-2">
+            <strong>Disclaimer.</strong> This ladder is illustrative for this sample only. It is not official grading policy and does not supersede registrar records, degree rules, or institutional policy.
+          </p>
+          <p class="conversion-note" id="conversion-note-3">
+            <strong>Transfer credit.</strong> Final recognition of courses and credits rests solely with the receiving institution, including its review of contact hours, syllabus equivalence, and applicable policy.
+          </p>
+        </section>
+
+        <div class="authorization-area notranslate" translate="no">
+          <section class="authorization-box">
+            <div class="authorization-watermark" aria-hidden="true"></div>
+            <h3 id="authorization-title" data-protected="true">Institutional Authorization</h3>
+            <p id="authorization-text" data-protected="true">Authorized upon official review; this document is true and valid.</p>
+          </section>
+        </div>
+      </section>
+
+      <footer class="end-note" id="transcript-end-note" data-protected="true">For personal use only. This document is true and valid.</footer>
+    </article>
+  </main>
+
+  <script src="./qrcode.min.js"></script>
+  <script src="./html2canvas.min.js"></script>
+  <script src="./i18n.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

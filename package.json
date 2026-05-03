@@ -1,0 +1,8 @@
+{
+  "name": "transcript-layout-converter-bilingual",
+  "private": true,
+  "description": "Static academic transcript layout tool (EN/中文). See README.md.",
+  "scripts": {
+    "smoke": "node tools/smoke-check.mjs"
+  }
+}
