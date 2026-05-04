@@ -3,6 +3,7 @@
   "private": true,
   "description": "Static academic transcript layout tool (EN/中文). See README.md.",
   "scripts": {
-    "smoke": "node tools/smoke-check.mjs"
+    "smoke": "node tools/smoke-check.mjs",
+    "check": "node --check script.js && node --check i18n.js"
   }
 }

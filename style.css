@@ -419,6 +419,128 @@ input.term-control-muted {
   z-index: 5;
 }
 
+/* Transcript sheet: formal serif titles, tabular figures, subtle GPA emphasis (security block keeps its own p margins below). */
+.transcript-page h1,
+.transcript-page h2 {
+  font-family: "思源宋体", "Source Han Serif SC", "Noto Serif CJK SC", "Times New Roman", Georgia, serif;
+  font-weight: 700;
+}
+
+.transcript-page .school-meta h1 {
+  font-kerning: normal;
+  letter-spacing: 0.01em;
+}
+
+.transcript-page .school-meta p,
+.transcript-page .student-box p,
+.transcript-page p.standing,
+.transcript-page p.standing-disclaimer,
+.transcript-page p.warning-line,
+.transcript-page p.sample-line,
+.transcript-page p.cert-meta,
+.transcript-page p.conversion-note {
+  margin: 1px 0;
+}
+
+#cum-gpa,
+.term-gpa {
+  color: #4a3b22;
+  font-weight: 800;
+  font-size: 1.05em;
+}
+
+.transcript-page .school-meta [data-edit-label="Document Title"] {
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  color: #3d3d3d;
+}
+
+/* Course tables: fixed columns, lighter grid, zebra, header alignment */
+.transcript-page .term-block table {
+  table-layout: fixed;
+}
+
+.transcript-page .term-block col.term-col-type {
+  width: 6%;
+}
+
+.transcript-page .term-block col.term-col-number {
+  width: 8%;
+}
+
+.transcript-page .term-block col.term-col-desc {
+  width: 48%;
+}
+
+.transcript-page .term-block col.term-col-percent {
+  width: 7%;
+}
+
+.transcript-page .term-block col.term-col-gpt {
+  width: 7%;
+}
+
+.transcript-page .term-block col.term-col-letter {
+  width: 6%;
+}
+
+.transcript-page .term-block col.term-col-credits {
+  width: 9%;
+}
+
+.transcript-page .term-block col.term-col-quality {
+  width: 9%;
+}
+
+.transcript-page .term-block thead th {
+  background: #efefef;
+  border-color: #dedede;
+  vertical-align: bottom;
+}
+
+.transcript-page .term-block th,
+.transcript-page .term-block td {
+  border-color: #dedede;
+}
+
+.transcript-page .term-block thead th:nth-child(4),
+.transcript-page .term-block thead th:nth-child(5),
+.transcript-page .term-block thead th:nth-child(7),
+.transcript-page .term-block thead th:nth-child(8) {
+  text-align: right;
+}
+
+.transcript-page .term-block thead th:nth-child(6) {
+  text-align: center;
+}
+
+.transcript-page .term-block tbody td:nth-child(6) {
+  text-align: center;
+}
+
+.transcript-page .term-block tbody td:nth-child(3) {
+  hyphens: auto;
+  word-break: break-word;
+  line-height: 1.38;
+}
+
+.transcript-page .term-block tbody tr:nth-child(even) td {
+  background-color: #fafafa;
+}
+
+.transcript-page .term-block .attempted,
+.transcript-page .term-block .earned,
+.transcript-page .term-block .gpa-hours,
+.transcript-page .term-block .quality,
+.transcript-page #cum-attempted,
+.transcript-page #cum-earned,
+.transcript-page #cum-gpa-hours,
+.transcript-page #cum-quality {
+  color: #5a4a32;
+  font-weight: 700;
+}
+
 .header {
   display: grid;
   grid-template-columns: 1.3in 1fr 1.3in;
@@ -513,10 +635,10 @@ p {
 }
 
 .security-audit {
-  border: 1px solid #cfcfcf;
+  border: 1px solid #e2e2e2;
   padding: 8px 10px;
   margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.92);
+  background: #fbfbfb;
 }
 
 .security-audit p {
@@ -733,10 +855,10 @@ p {
 }
 
 .student-box {
-  border: 1px solid #d5d5d5;
+  border: 1px solid #d0d0d0;
   padding: 10px 14px;
   margin: 10px 0 14px;
-  background: rgba(255, 255, 255, 0.88);
+  background: #fafafa;
 }
 
 .student-layout {
@@ -771,11 +893,21 @@ p {
 
 .info-column {
   display: grid;
-  gap: 4px;
+  gap: 2px;
+}
+
+.transcript-page .student-layout > .info-column:nth-of-type(3) {
+  border-left: 1px solid #e6e6e6;
+  padding-left: 14px;
+  margin-left: 2px;
 }
 
 .term-block {
   margin-top: 12px;
+}
+
+.term-block td {
+  padding: 5px 8px;
 }
 
 table {
@@ -800,16 +932,18 @@ th {
 
 .num {
   text-align: right;
+  font-family: "Inter", "Roboto", "SF Mono", "Consolas", "Menlo", monospace;
+  font-feature-settings: "tnum";
 }
 
 .totals-row {
   display: grid;
   grid-template-columns: 1fr repeat(5, auto);
   gap: 8px 16px;
-  border-bottom: 1px solid #bbb;
+  border-bottom: 1px solid #c5c5c5;
   padding: 8px 6px;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.9);
+  background: #f7f7f7;
 }
 
 .signature-row {
@@ -932,17 +1066,20 @@ th {
 
 .cumulative-box {
   margin-top: 14px;
-  border-top: 2px solid #777;
+  border-top: 2px solid #6f6f6f;
   padding-top: 8px;
 }
 
 .totals-row.final {
   border-bottom: none;
-  border-top: 1px solid #bbb;
+  border-top: 1px solid #b8b8b8;
+  background: linear-gradient(to bottom, #fdfcf9, #f5f3ef);
+  padding: 10px 8px;
+  border-radius: 2px;
 }
 
 .standing {
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .certification {
@@ -1016,6 +1153,21 @@ th {
   padding: 4px 6px;
 }
 
+.transcript-page .scale th,
+.transcript-page .scale td {
+  border-color: #e4e4e4;
+}
+
+.transcript-page #percent-letter-scale-table tbody tr:last-child td {
+  border-bottom-color: #e0e0e0;
+}
+
+.transcript-page .scale h3#gpa-scale-title {
+  font-size: 13px;
+  letter-spacing: 0.028em;
+  color: #2a2a2a;
+}
+
 .term-block thead .th-sub {
   display: block;
   font-weight: 400;
@@ -1028,9 +1180,16 @@ th {
   min-width: 0.95in;
 }
 
-.term-block > h2 {
-  margin: 8px 0;
-  font-size: 1.2rem;
+.transcript-page .term-block > h2 {
+  margin: 10px 0 4px;
+  font-size: 1.12rem;
+  letter-spacing: 0.02em;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #b0b0b0;
+}
+
+.transcript-page .term-block thead .th-percent {
+  min-width: 0;
 }
 
 .conversion-note {
@@ -1317,4 +1476,42 @@ th {
   font-size: 9px;
   line-height: 1.35;
   color: #555;
+}
+
+/* --- Bulk Excel/CSV import (sidebar + transcript footnote) --- */
+.excel-import-block {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.excel-import-section-label {
+  display: block;
+  margin-bottom: 0.1rem;
+}
+
+.excel-import-hint {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #3a3a3a;
+  margin: 0;
+  padding: 0;
+}
+
+.excel-import-file-label {
+  margin-top: 0.35rem;
+}
+
+.import-disclaimer {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #5a1a1a;
+  margin: 0.35rem 0 0;
+  padding: 0.45rem 0.55rem;
+  background: rgba(255, 240, 220, 0.55);
+  border-left: 3px solid #b45309;
+  border-radius: 2px;
 }

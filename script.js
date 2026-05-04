@@ -5,6 +5,10 @@ function formatTwo(value) {
 
 let securityUpdateTimer = null;
 let lastSecurityHash = "";
+/** Last serialized integrity payload; skip SHA-256 + DOM writes when unchanged. */
+let lastIntegrityPayloadString = null;
+/** Cached cumulative summary nodes (stable ids on #transcript-page). */
+let cachedCumulativeDom = null;
 
 /** Cleared once <code>rawInputTokenHash</code> is set (save timer when no longer needed). */
 let browserTranslationRawLockIntervalId = null;
@@ -155,6 +159,11 @@ const US_PERCENT_GRADE_LADDER = Object.freeze(
   ].sort((a, b) => a.minPercent - b.minPercent)
 );
 
+/** Descending by minPercent for percent→letter lookup (avoid sorting on every cell). */
+const US_PERCENT_GRADE_LADDER_DESC = Object.freeze(
+  [...US_PERCENT_GRADE_LADDER].sort((a, b) => b.minPercent - a.minPercent)
+);
+
 function parseTranscriptNumber(raw) {
   if (raw == null) {
     return NaN;
@@ -184,7 +193,7 @@ function resolveUsLetterGradeFromPercent(percent) {
   if (p < 60) {
     return { letter: "F", gradePoint: 0.0 };
   }
-  const rungs = [...US_PERCENT_GRADE_LADDER].sort((a, b) => b.minPercent - a.minPercent);
+  const rungs = US_PERCENT_GRADE_LADDER_DESC;
   for (let i = 0; i < rungs.length; i += 1) {
     const r = rungs[i];
     if (p >= r.minPercent) {
@@ -301,8 +310,7 @@ function applyGradeAndQualityFromPercent(row) {
 function generateDocumentId() {
   const now = new Date();
   const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const randomPart = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
-  return `TRX-${datePart}-${randomPart}`;
+  return `TRX-SAMPLE-${datePart}-001`;
 }
 
 function isPrivacyPreviewEnabled() {
@@ -358,6 +366,74 @@ function getEditableNodePlainTextForPayload(node) {
     return `${lab} ${val}`.trim();
   }
   return val;
+}
+
+/**
+ * Applies language-specific sample content for the transcript body (header, PII, course rows).
+ * English presets mirror the shipped HTML; Chinese presets use {@link window.TRANSCRIPT_I18N_PACK}.zh.transcriptDemo.
+ */
+function applyTranscriptDemoPresets() {
+  const z = getUiLang();
+  const demo = window.TRANSCRIPT_I18N_PACK?.[z]?.transcriptDemo;
+  if (!demo) {
+    return;
+  }
+  const page = document.getElementById("transcript-page");
+  if (!page) {
+    return;
+  }
+
+  if (demo.byEditLabel && typeof demo.byEditLabel === "object") {
+    Object.entries(demo.byEditLabel).forEach(([label, val]) => {
+      if (val == null) {
+        return;
+      }
+      const node = page.querySelector(`[data-edit-label="${label}"]`);
+      if (node) {
+        writeEditableSurfaceText(node, String(val));
+      }
+    });
+  }
+
+  if (demo.pii && typeof demo.pii === "object") {
+    Object.entries(demo.pii).forEach(([key, val]) => {
+      const span = page.querySelector(`[data-pii-key="${key}"]`);
+      if (!span) {
+        return;
+      }
+      const v = String(val ?? "");
+      piiKeyBackup[key] = v;
+      span.textContent = isPrivacyPreviewEnabled() ? "***" : v;
+    });
+  }
+
+  const cMap = demo.coursesBySemester;
+  if (cMap && typeof cMap === "object") {
+    page.querySelectorAll(".term-block:not(.term-block-inactive)").forEach((block) => {
+      const kind = block.dataset.semesterKind;
+      if (kind !== "fall" && kind !== "spring") {
+        return;
+      }
+      const rowList = cMap[kind];
+      if (!Array.isArray(rowList)) {
+        return;
+      }
+      const trs = block.querySelectorAll("tbody tr");
+      rowList.forEach((cells, ri) => {
+        const tr = trs[ri];
+        if (!tr || !Array.isArray(cells)) {
+          return;
+        }
+        const tds = tr.querySelectorAll("td");
+        for (let c = 0; c < 8 && c < cells.length; c += 1) {
+          if (tds[c]) {
+            tds[c].textContent = String(cells[c] ?? "");
+          }
+        }
+        applyGradeAndQualityFromPercent(tr);
+      });
+    });
+  }
 }
 
 function collectIntegrityPayload() {
@@ -452,12 +528,117 @@ function bindTermLayoutMode() {
   });
 }
 
+/**
+ * SHA-256 over bytes when {@link SubtleCrypto#digest} is unavailable (e.g. <code>file://</code>).
+ * MIT-style compact core; length uses {@link BigInt} when present for &gt;4GiB-safe bit counts.
+ */
+function sha256DigestHexJs(u8) {
+  const K = new Uint32Array([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
+    0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0xfc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3,
+    0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+    0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814,
+    0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ]);
+  const rotr = (n, x) => (x >>> n) | (x << (32 - n));
+  const l = u8.length;
+  const z = (56 - ((l + 1) % 64) + 64) % 64;
+  const buf = new Uint8Array(l + 1 + z + 8);
+  buf.set(u8);
+  buf[l] = 0x80;
+  const dv = new DataView(buf.buffer);
+  let bitLenHi = 0;
+  let bitLenLo = 0;
+  if (typeof BigInt === "function") {
+    const bits = BigInt(l) * 8n;
+    bitLenHi = Number((bits >> 32n) & 0xffffffffn);
+    bitLenLo = Number(bits & 0xffffffffn);
+  } else {
+    bitLenLo = (l >>> 0) * 8;
+    bitLenHi = ((l / 0x20000000) | 0) * 8;
+  }
+  dv.setUint32(buf.length - 8, bitLenHi >>> 0, false);
+  dv.setUint32(buf.length - 4, bitLenLo >>> 0, false);
+  let H0 = 0x6a09e667;
+  let H1 = 0xbb67ae85;
+  let H2 = 0x3c6ef372;
+  let H3 = 0xa54ff53a;
+  let H4 = 0x510e527f;
+  let H5 = 0x9b05688c;
+  let H6 = 0x1f83d9ab;
+  let H7 = 0x5be0cd19;
+  const W = new Uint32Array(64);
+  for (let off = 0; off < buf.length; off += 64) {
+    for (let i = 0; i < 16; i += 1) {
+      W[i] = dv.getUint32(off + i * 4, false);
+    }
+    for (let i = 16; i < 64; i += 1) {
+      const s0 = rotr(7, W[i - 15]) ^ rotr(18, W[i - 15]) ^ (W[i - 15] >>> 3);
+      const s1 = rotr(17, W[i - 2]) ^ rotr(19, W[i - 2]) ^ (W[i - 2] >>> 10);
+      W[i] = (W[i - 16] + s0 + W[i - 7] + s1) | 0;
+    }
+    let a = H0;
+    let b = H1;
+    let c = H2;
+    let d = H3;
+    let e = H4;
+    let f = H5;
+    let g = H6;
+    let h = H7;
+    for (let i = 0; i < 64; i += 1) {
+      const S1 = rotr(6, e) ^ rotr(11, e) ^ rotr(25, e);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[i] + W[i]) | 0;
+      const S0 = rotr(2, a) ^ rotr(13, a) ^ rotr(22, a);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) | 0;
+      h = g;
+      g = f;
+      f = e;
+      e = (d + t1) | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (t1 + t2) | 0;
+    }
+    H0 = (H0 + a) | 0;
+    H1 = (H1 + b) | 0;
+    H2 = (H2 + c) | 0;
+    H3 = (H3 + d) | 0;
+    H4 = (H4 + e) | 0;
+    H5 = (H5 + f) | 0;
+    H6 = (H6 + g) | 0;
+    H7 = (H7 + h) | 0;
+  }
+  const H = [H0, H1, H2, H3, H4, H5, H6, H7];
+  let hex = "";
+  for (let i = 0; i < 8; i += 1) {
+    const x = H[i];
+    for (let k = 28; k >= 0; k -= 4) {
+      hex += ((x >>> k) & 15).toString(16);
+    }
+  }
+  return hex;
+}
+
+/** Prefer Web Crypto; fall back to {@link sha256DigestHexJs} when <code>crypto.subtle</code> is missing. */
+async function sha256HexFromBinary(u8) {
+  const buf = u8 instanceof Uint8Array ? u8 : new Uint8Array(u8);
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  if (globalThis.crypto && crypto.subtle && typeof crypto.subtle.digest === "function") {
+    try {
+      const digest = await crypto.subtle.digest("SHA-256", ab);
+      return hexFromBuffer(digest);
+    } catch (_e) {
+      /* fall through to JS implementation */
+    }
+  }
+  return sha256DigestHexJs(buf);
+}
+
 async function sha256Hex(input) {
   const data = new TextEncoder().encode(input);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return sha256HexFromBinary(data);
 }
 
 function hexFromBuffer(buffer) {
@@ -1307,6 +1488,9 @@ async function updateSecurityArtifacts() {
     return;
   }
   const payload = collectIntegrityPayload();
+  if (payload === lastIntegrityPayloadString) {
+    return;
+  }
   const hash = await sha256Hex(payload);
   if (hash !== lastSecurityHash) {
     hashEl.dataset.fullHash = hash;
@@ -1314,6 +1498,7 @@ async function updateSecurityArtifacts() {
     lastSecurityHash = hash;
     setLayoutFingerprintEditedAtDisplay(Date.now());
   }
+  lastIntegrityPayloadString = payload;
   scheduleLiveExportQrPreview();
 }
 
@@ -1477,7 +1662,7 @@ function buildEditor() {
       const row = node.closest("tr");
       if (row && row.closest(".term-block")) {
         applyGradeAndQualityFromPercent(row);
-        fillTermTotals();
+        fillTermTotals({ skipGradeRowPass: true });
       }
       scheduleSecurityArtifactsUpdate();
 
@@ -1546,7 +1731,7 @@ function syncTranscriptTextFromSideEditorForExport(forceUnmaskedForExport = fals
       applyGradeAndQualityFromPercent(row);
     }
   }
-  fillTermTotals();
+  fillTermTotals({ skipGradeRowPass: true });
   syncPersonalSsnDisplay(forceUnmaskedForExport);
   scheduleSecurityArtifactsUpdate(0);
 }
@@ -1609,6 +1794,267 @@ function bindCourseRowControls() {
     refreshEditablePanel();
   });
 }
+
+const IMPORT_TEMPLATE_FILENAME = "transcript_import_template.csv";
+const IMPORT_MAX_ROWS = 300;
+
+function normalizeImportHeaderCell(h) {
+  return String(h ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function buildImportColumnIndex(headerRow) {
+  const headers = headerRow.map((c) => normalizeImportHeaderCell(c));
+  const findIdx = (candidates) => {
+    for (let i = 0; i < headers.length; i += 1) {
+      if (candidates.includes(headers[i])) {
+        return i;
+      }
+    }
+    return undefined;
+  };
+  return {
+    subject: findIdx(["subject", "course type", "课程类型", "课程性质"]),
+    courseNumber: findIdx(["course number", "coursenumber", "course no", "course_no", "课号"]),
+    description: findIdx(["description", "课程名称", "课程描述"]),
+    percent: findIdx(["percent", "%", "百分制"]),
+    credits: findIdx(["credits", "credit hours", "credit hrs", "学分"]),
+  };
+}
+
+function importColumnIndexIsComplete(idx) {
+  return (
+    idx.subject !== undefined &&
+    idx.courseNumber !== undefined &&
+    idx.description !== undefined &&
+    idx.percent !== undefined &&
+    idx.credits !== undefined
+  );
+}
+
+function clampImportPercent(n) {
+  if (!Number.isFinite(n)) {
+    return NaN;
+  }
+  return Math.min(100, Math.max(0, n));
+}
+
+function clampImportCredits(n) {
+  if (!Number.isFinite(n)) {
+    return NaN;
+  }
+  return Math.min(999, Math.max(0, n));
+}
+
+function formatPercentForTranscriptCell(p) {
+  if (!Number.isFinite(p)) {
+    return "";
+  }
+  const r = Math.round(p * 100) / 100;
+  if (Math.abs(r - Math.round(r)) < 1e-6) {
+    return String(Math.round(r));
+  }
+  return r.toFixed(2);
+}
+
+function fillImportedCourseRow(row, rec) {
+  const cells = row.querySelectorAll("td");
+  if (cells.length < 8) {
+    return;
+  }
+  writeEditableSurfaceText(cells[0], rec.subject ?? "");
+  writeEditableSurfaceText(cells[1], rec.courseNumber ?? "");
+  writeEditableSurfaceText(cells[2], rec.description ?? "");
+  const p = clampImportPercent(parseTranscriptNumber(rec.percent));
+  const c = clampImportCredits(parseTranscriptNumber(rec.credits));
+  cells[COURSE_COL_PERCENT].textContent = formatPercentForTranscriptCell(p);
+  cells[COURSE_COL_CREDITS].textContent = formatTwo(c);
+  applyGradeAndQualityFromPercent(row);
+}
+
+function readWorkbookFirstSheetAoA(uint8, extHint) {
+  if (typeof XLSX === "undefined" || !XLSX.read) {
+    throw new Error("SheetJS (XLSX) not loaded — check script tag / network.");
+  }
+  const ext = (extHint || "").toLowerCase();
+  const isCsv = ext.endsWith(".csv");
+  const attempts = [];
+  if (isCsv) {
+    attempts.push(() => XLSX.read(uint8, { type: "array", codepage: 65001 }));
+    attempts.push(() => XLSX.read(uint8, { type: "array", codepage: 936 }));
+    attempts.push(() => {
+      const txt = new TextDecoder("utf-8", { fatal: false }).decode(uint8);
+      return XLSX.read(txt, { type: "string" });
+    });
+  } else {
+    attempts.push(() => XLSX.read(uint8, { type: "array", bookVBA: false }));
+  }
+  let lastErr = null;
+  for (let a = 0; a < attempts.length; a += 1) {
+    try {
+      const wb = attempts[a]();
+      const sheetName = wb.SheetNames && wb.SheetNames[0];
+      if (!sheetName) {
+        throw new Error("No worksheet in file.");
+      }
+      const sheet = wb.Sheets[sheetName];
+      const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+      if (!aoa || aoa.length === 0) {
+        throw new Error("Empty sheet.");
+      }
+      const headerRow = aoa[0].map((c) => String(c));
+      const idx = buildImportColumnIndex(headerRow);
+      if (!importColumnIndexIsComplete(idx)) {
+        lastErr = new Error(
+          "Header row must include Subject/Course Type, Course Number, Description, Percent, and Credits (see template)."
+        );
+        continue;
+      }
+      return aoa;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr || "Parse failed."));
+}
+
+function bindExcelImport() {
+  const dlBtn = document.getElementById("download-import-template-btn");
+  const importBtn = document.getElementById("import-excel-btn");
+  const fileInput = document.getElementById("excel-upload");
+  const termSelect = document.getElementById("term-select");
+  if (!dlBtn || !importBtn || !fileInput || !termSelect) {
+    return;
+  }
+
+  dlBtn.addEventListener("click", () => {
+    const p = uiPack();
+    const BOM = "\uFEFF";
+    const lines = [
+      "Subject,Course Number,Description,Percent,Credits",
+      "MATH,101,Advanced Mathematics,85,4",
+      "ENG,201,College English,90,3",
+    ];
+    const blob = new Blob([BOM + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = IMPORT_TEMPLATE_FILENAME;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+    const tpl = p.importDiagTemplateOk || "Import: CSV template downloaded ({filename}, UTF-8 BOM).";
+    setUploadDiagnostics(tpl.replace("{filename}", IMPORT_TEMPLATE_FILENAME), "ok");
+  });
+
+  importBtn.addEventListener("click", async () => {
+    const p = uiPack();
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      window.alert(p.importAlertNoFile || "Please select a file.");
+      return;
+    }
+    if (typeof XLSX === "undefined" || !XLSX.read) {
+      window.alert(p.importAlertNoLib || "SheetJS not loaded.");
+      setUploadDiagnostics("Import: SheetJS (XLSX) not available.", "error");
+      return;
+    }
+
+    const name = (file.name || "").toLowerCase();
+    const okExt = name.endsWith(".csv") || name.endsWith(".xlsx") || name.endsWith(".xls");
+    if (!okExt) {
+      window.alert(p.importAlertBadExt || "Unsupported type.");
+      setUploadDiagnostics("Import: unsupported file extension.", "error");
+      return;
+    }
+
+    setUploadDiagnostics(p.importDiagReading || "Import: Reading file…", "neutral");
+    try {
+      const buf = await file.arrayBuffer();
+      const uint8 = new Uint8Array(buf);
+      const aoa = readWorkbookFirstSheetAoA(uint8, name);
+      const idx = buildImportColumnIndex(aoa[0].map((c) => String(c)));
+      if (!importColumnIndexIsComplete(idx)) {
+        throw new Error(
+          "Could not find required columns (Subject/Course Type, Course Number, Description, Percent, Credits). Use the downloaded template."
+        );
+      }
+
+      const blocks = getActiveTermBlocks();
+      if (blocks.length === 0) {
+        throw new Error("No active term section on the transcript.");
+      }
+      const block = blocks[Number(termSelect.value)] || blocks[0];
+      const tbody = block.querySelector("tbody");
+      if (!tbody) {
+        throw new Error("Could not find course table body for the selected term.");
+      }
+
+      const pick = (row, key) => {
+        const i = idx[key];
+        if (i === undefined || i < 0) {
+          return "";
+        }
+        const v = row[i];
+        return v != null ? String(v).trim() : "";
+      };
+
+      let added = 0;
+      let skipped = 0;
+      for (let r = 1; r < aoa.length; r += 1) {
+        if (added >= IMPORT_MAX_ROWS) {
+          skipped += aoa.length - r;
+          break;
+        }
+        const row = aoa[r];
+        if (!Array.isArray(row) || row.every((c) => String(c ?? "").trim() === "")) {
+          continue;
+        }
+        const rec = {
+          subject: pick(row, "subject"),
+          courseNumber: pick(row, "courseNumber"),
+          description: pick(row, "description"),
+          percent: pick(row, "percent"),
+          credits: pick(row, "credits"),
+        };
+        const pRaw = parseTranscriptNumber(rec.percent);
+        const cRaw = parseTranscriptNumber(rec.credits);
+        if (!Number.isFinite(pRaw) || !Number.isFinite(cRaw)) {
+          skipped += 1;
+          continue;
+        }
+
+        const newRow = createBlankRow();
+        tbody.appendChild(newRow);
+        fillImportedCourseRow(newRow, rec);
+        added += 1;
+      }
+
+      refreshEditablePanel();
+      appendComplianceEventFireAndForget("course_data_import", {
+        fileName: file.name,
+        fileSize: file.size,
+        termSelectValue: termSelect.value,
+        rowsAdded: added,
+        rowsSkipped: skipped,
+      });
+      const resTpl = p.importDiagResult || "Import: {added} row(s); {skipped} skipped.";
+      setUploadDiagnostics(
+        resTpl.replace("{added}", String(added)).replace("{skipped}", String(skipped)),
+        added > 0 ? "ok" : "error"
+      );
+      fileInput.value = "";
+    } catch (err) {
+      const msg = err && err.message ? err.message : String(err);
+      const pre = p.importDiagFailPrefix || "Import failed:";
+      setUploadDiagnostics(`${pre} ${msg}`, "error");
+      window.alert(`${pre}\n${msg}`);
+    }
+  });
+}
+
 
 function bindPhotoUpload() {
   const fileInput = document.getElementById("photo-upload");
@@ -1801,8 +2247,14 @@ function bindTermSeasonControls() {
   }
 
   const now = new Date();
-  year1El.value = String(now.getFullYear());
-  year2El.value = String(now.getFullYear() - 1);
+  const y = now.getFullYear();
+  if (orderEl.value === "fall-spring") {
+    year1El.value = String(y - 1);
+    year2El.value = String(y);
+  } else {
+    year1El.value = String(y - 1);
+    year2El.value = String(y - 1);
+  }
 
   const reorderTermBlocksDom = (order) => {
     const fallBlock = document.querySelector('.term-block[data-semester-kind="fall"]');
@@ -2177,12 +2629,112 @@ function bindProtectedStaticZonesGuard() {
   };
 }
 
-/** Public UTC time service; called during export only, alongside local clock lines. */
+/** Primary public UTC JSON service (often rate-limited or flaky). */
 const TRUSTED_TIMESTAMP_API_URL = "https://worldtimeapi.org/api/timezone/Etc/UTC";
+/** Secondary time API (different operator / routing; improves success rate). */
+const TRUSTED_TIMESTAMP_TIMEAPI_URL = "https://timeapi.io/api/Time/current/zone?timeZone=UTC";
+/** Cloudflare edge trace includes a monotonic UTC unix timestamp line. */
+const TRUSTED_TIMESTAMP_CLOUDFLARE_TRACE_URL = "https://www.cloudflare.com/cdn-cgi/trace";
+
+function parseWorldTimeApiUtc(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+  const utcStr =
+    (typeof data.utc_datetime === "string" && data.utc_datetime) ||
+    (typeof data.datetime === "string" && data.datetime) ||
+    (data.unixtime != null && Number.isFinite(Number(data.unixtime))
+      ? new Date(Number(data.unixtime) * 1000).toISOString()
+      : "");
+  return utcStr || "";
+}
+
+function parseTimeApiIoUtc(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+  const dt = typeof data.dateTime === "string" ? data.dateTime.trim() : "";
+  if (!dt) {
+    return "";
+  }
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(dt)) {
+    return dt;
+  }
+  return `${dt}Z`;
+}
+
+function parseCloudflareTraceUtc(text) {
+  if (typeof text !== "string") {
+    return "";
+  }
+  const m = /(?:^|\n)ts=(\d+(?:\.\d+)?)/m.exec(text);
+  if (!m) {
+    return "";
+  }
+  const sec = parseFloat(m[1]);
+  if (!Number.isFinite(sec)) {
+    return "";
+  }
+  return new Date(Math.floor(sec * 1000)).toISOString();
+}
+
+function fetchWithDeadline(url, deadlineMs) {
+  const ac = new AbortController();
+  const tid = setTimeout(() => {
+    try {
+      ac.abort();
+    } catch (_e) {
+      /* ignore */
+    }
+  }, deadlineMs);
+  return fetch(url, { cache: "no-store", mode: "cors", signal: ac.signal }).finally(() => {
+    clearTimeout(tid);
+  });
+}
+
+async function fetchUtcFromWorldTimeApi(deadlineMs) {
+  const res = await fetchWithDeadline(TRUSTED_TIMESTAMP_API_URL, deadlineMs);
+  if (!res.ok) {
+    throw new Error(`worldtimeapi HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const utcStr = parseWorldTimeApiUtc(data);
+  if (!utcStr) {
+    throw new Error("worldtimeapi empty");
+  }
+  return utcStr;
+}
+
+async function fetchUtcFromTimeApiIo(deadlineMs) {
+  const res = await fetchWithDeadline(TRUSTED_TIMESTAMP_TIMEAPI_URL, deadlineMs);
+  if (!res.ok) {
+    throw new Error(`timeapi HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const utcStr = parseTimeApiIoUtc(data);
+  if (!utcStr) {
+    throw new Error("timeapi empty");
+  }
+  return utcStr;
+}
+
+async function fetchUtcFromCloudflareTrace(deadlineMs) {
+  const res = await fetchWithDeadline(TRUSTED_TIMESTAMP_CLOUDFLARE_TRACE_URL, deadlineMs);
+  if (!res.ok) {
+    throw new Error(`cloudflare trace HTTP ${res.status}`);
+  }
+  const text = await res.text();
+  const utcStr = parseCloudflareTraceUtc(text);
+  if (!utcStr) {
+    throw new Error("cloudflare trace empty");
+  }
+  return utcStr;
+}
 
 /**
- * Request current UTC time from a public API and write it to #trusted-timestamp.
- * On failure, show an offline hint; does not replace local clock records.
+ * Request current UTC time from public services (parallel race), write to #trusted-timestamp.
+ * If every remote fails (rate limits, regional routing, ad blockers, etc.), show ISO UTC from the
+ * browser clock with an explicit fallback label — not “offline”, since the user may still be online.
  */
 async function fetchTrustedTimestamp() {
   const el = document.getElementById("trusted-timestamp");
@@ -2191,25 +2743,38 @@ async function fetchTrustedTimestamp() {
   }
   const p = uiPack();
   el.textContent = p.utcFetching || "Fetching UTC…";
+  const deadlineMs = 12000;
+  const tasks = [
+    fetchUtcFromWorldTimeApi(deadlineMs),
+    fetchUtcFromTimeApiIo(deadlineMs),
+    fetchUtcFromCloudflareTrace(deadlineMs),
+  ];
+  let utcStr = "";
   try {
-    const res = await fetch(TRUSTED_TIMESTAMP_API_URL, { cache: "no-store", mode: "cors" });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+    if (typeof Promise.any === "function") {
+      utcStr = await Promise.any(tasks);
+    } else {
+      const settled = await Promise.allSettled(tasks);
+      for (let i = 0; i < settled.length; i += 1) {
+        const r = settled[i];
+        if (r.status === "fulfilled" && r.value) {
+          utcStr = r.value;
+          break;
+        }
+      }
     }
-    const data = await res.json();
-    const utcStr =
-      (typeof data.utc_datetime === "string" && data.utc_datetime) ||
-      (typeof data.datetime === "string" && data.datetime) ||
-      (data.unixtime != null && Number.isFinite(Number(data.unixtime))
-        ? new Date(Number(data.unixtime) * 1000).toISOString()
-        : "");
-    if (!utcStr) {
-      throw new Error("empty time");
-    }
-    el.textContent = utcStr;
   } catch (_e) {
-    el.textContent = p.utcOffline || "UTC unavailable (offline)";
+    utcStr = "";
   }
+  if (utcStr) {
+    el.textContent = utcStr;
+    return;
+  }
+  const iso = new Date().toISOString();
+  el.textContent =
+    typeof p.utcBrowserFallback === "function"
+      ? p.utcBrowserFallback(iso)
+      : `${iso} — ${p.utcOffline || "UTC unavailable (offline)"}`;
 }
 
 function bindExportPng() {
@@ -2242,10 +2807,48 @@ function bindExportPng() {
       await fetchTrustedTimestamp();
       status.textContent = p.exportRendering || "Export: Rendering PNG…";
       status.style.color = "#3b3b3b";
+      // A3 @ 300 DPI: max pixel height with small margin (caps dual-term PNG height).
+      const maxHeightPx = 4961;
+      const contentHeightPx = Math.max(1, target.scrollHeight);
+      const contentWidthPx = Math.max(1, target.scrollWidth);
+      let exportScale = 2;
+      if (!isSingleTermLayout()) {
+        if (contentHeightPx * exportScale > maxHeightPx) {
+          exportScale =
+            Math.floor((maxHeightPx / contentHeightPx) * 100) / 100;
+          // Must allow scale < 1 when content is taller than maxHeightPx; clamping to 1
+          // kept canvas height above limits and caused html2canvas / GPU failures.
+          if (!(exportScale > 0)) {
+            exportScale = maxHeightPx / contentHeightPx;
+          }
+        }
+      }
+      // Single-term scale:2 (and wide×tall dual-term) can exceed browser canvas limits; shrink scale uniformly.
+      const MAX_CANVAS_EDGE = 16384;
+      const MAX_CANVAS_PIXELS = 200000000;
+      const edgeScaleCap = Math.min(
+        MAX_CANVAS_EDGE / contentWidthPx,
+        MAX_CANVAS_EDGE / contentHeightPx
+      );
+      const areaScaleCap = Math.sqrt(MAX_CANVAS_PIXELS / (contentWidthPx * contentHeightPx));
+      exportScale = Math.min(exportScale, edgeScaleCap, areaScaleCap);
+      if (!(exportScale > 0) || !Number.isFinite(exportScale)) {
+        exportScale = Math.min(1, maxHeightPx / contentHeightPx, edgeScaleCap, areaScaleCap);
+      }
+      if (!(exportScale > 0) || !Number.isFinite(exportScale)) {
+        exportScale = 0.05;
+      }
+      exportScale = Math.floor(exportScale * 1000) / 1000;
+      exportScale = Math.max(0.01, exportScale);
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
       const canvas = await window.html2canvas(target, {
         backgroundColor: "#ffffff",
-        scale: 2,
+        scale: exportScale,
         useCORS: true,
+        foreignObjectRendering: false,
+        imageTimeout: 15000,
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) {
@@ -2254,9 +2857,7 @@ function bindExportPng() {
       const exportHashEl = document.getElementById("export-file-hash");
       let exportPngSha256 = "";
       if (exportHashEl) {
-        const bytes = await blob.arrayBuffer();
-        const digest = await crypto.subtle.digest("SHA-256", bytes);
-        exportPngSha256 = hexFromBuffer(digest);
+        exportPngSha256 = await sha256HexFromBinary(new Uint8Array(await blob.arrayBuffer()));
         exportHashEl.textContent = exportPngSha256.slice(0, 24).toUpperCase();
       }
       const url = URL.createObjectURL(blob);
@@ -2279,7 +2880,9 @@ function bindExportPng() {
         })();
       }
     } catch (err) {
-      status.textContent = uiPack().exportFailPng || "Export failed: PNG render error";
+      const baseMsg = uiPack().exportFailPng || "Export failed: PNG render error";
+      const hint = err && err.message ? String(err.message).slice(0, 120) : "";
+      status.textContent = hint ? `${baseMsg} (${hint})` : baseMsg;
       status.style.color = "#7a0000";
       appendComplianceEventFireAndForget("export_png_failure", {
         reason: "render_or_encode_failed",
@@ -2311,7 +2914,8 @@ function bindExportPng() {
  * Quality Points = sum of Quality Pts; Term GPA = Quality Points ÷ GPA Hours.
  * Cumulative: each cumulative field = sum of the corresponding term totals; Cumulative GPA = cumulative QP ÷ cumulative GPA Hours.
  */
-function fillTermTotals() {
+function fillTermTotals(options) {
+  const skipGradeRowPass = Boolean(options && options.skipGradeRowPass);
   /** Cumulative GPA band thresholds for neutral Academic Standing labels (see `.standing`). */
   const STANDING_EXCELLENT_MIN = 3.5;
   const STANDING_GOOD_MIN = 3.0;
@@ -2323,7 +2927,9 @@ function fillTermTotals() {
 
   termBlocks.forEach((block) => {
     const rows = Array.from(block.querySelectorAll("tbody tr"));
-    rows.forEach((row) => applyGradeAndQualityFromPercent(row));
+    if (!skipGradeRowPass) {
+      rows.forEach((row) => applyGradeAndQualityFromPercent(row));
+    }
     // Attempted / Earned / GPA Hours = sum of Credits Earned; Quality Points = sum of Quality Pts; Term GPA = QP / GPA Hours.
     const hours = rows.reduce((sum, row) => {
       const v = parseTranscriptNumber(row.dataset.hours || "0");
@@ -2346,11 +2952,21 @@ function fillTermTotals() {
   });
 
   const cumulativeGpa = cumulativeHours > 0 ? cumulativeQuality / cumulativeHours : 0;
-  document.getElementById("cum-attempted").textContent = formatTwo(cumulativeHours);
-  document.getElementById("cum-earned").textContent = formatTwo(cumulativeHours);
-  document.getElementById("cum-gpa-hours").textContent = formatTwo(cumulativeHours);
-  document.getElementById("cum-quality").textContent = formatTwo(cumulativeQuality);
-  document.getElementById("cum-gpa").textContent = formatTwo(cumulativeGpa);
+  if (!cachedCumulativeDom) {
+    cachedCumulativeDom = {
+      cumAttempted: document.getElementById("cum-attempted"),
+      cumEarned: document.getElementById("cum-earned"),
+      cumGpaHours: document.getElementById("cum-gpa-hours"),
+      cumQuality: document.getElementById("cum-quality"),
+      cumGpa: document.getElementById("cum-gpa"),
+    };
+  }
+  const c = cachedCumulativeDom;
+  if (c.cumAttempted) c.cumAttempted.textContent = formatTwo(cumulativeHours);
+  if (c.cumEarned) c.cumEarned.textContent = formatTwo(cumulativeHours);
+  if (c.cumGpaHours) c.cumGpaHours.textContent = formatTwo(cumulativeHours);
+  if (c.cumQuality) c.cumQuality.textContent = formatTwo(cumulativeQuality);
+  if (c.cumGpa) c.cumGpa.textContent = formatTwo(cumulativeGpa);
 
   // Academic Standing labels are GPA-band estimates only (not edited in the sidebar).
   const p = uiPack();
@@ -2391,6 +3007,7 @@ window.transcriptToolAfterLanguageChange = function () {
   if (typeof window.transcriptToolRefreshTermSeasonHeadings === "function") {
     window.transcriptToolRefreshTermSeasonHeadings();
   }
+  applyTranscriptDemoPresets();
   syncTermSelectOptionsForActiveTerms();
   refreshLegalAckStatusText();
   refreshEditablePanel();
@@ -2406,6 +3023,7 @@ window.transcriptToolAfterLanguageChange = function () {
 void initComplianceAuditLog();
 
 bindCourseRowControls();
+bindExcelImport();
 bindPhotoUpload();
 bindLogoUpload();
 bindCenterWatermarkUpload();
@@ -2440,6 +3058,8 @@ assertStrictGradeLadderSamples();
 applyTermLayoutMode();
 bindTermLayoutMode();
 bindTermSeasonControls();
+applyTranscriptDemoPresets();
+refreshEditablePanel();
 initOfflineQrLibrarySelfCheck();
 initBrowserTranslationRawLockWatcher();
 updateSecurityArtifacts();

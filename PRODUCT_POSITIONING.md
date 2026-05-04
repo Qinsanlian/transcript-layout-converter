@@ -46,7 +46,7 @@ Resistance is rarely about denying your coursework; it is **risk framing**: fear
 
 Suggested sequence (adapt per institution):
 
-1. **Pinpoint the choke point**: Missing seal requirement? Mandated stock? Translation must originate from their office? Rejecting Fayette-style mastheads? Ask for something **published or written** (memo, intranet cite; at minimum take careful notes yourself).
+1. **Pinpoint the choke point**: Missing seal requirement? Mandated stock? Translation must originate from their office? Rejecting non-standard mastheads? Ask for something **published or written** (memo, intranet cite; at minimum take careful notes yourself).
 2. **Two-folder approach (steady in practice)**. **Pack A**: follow registrar/international templates **verbatim with official seals**—the “hardware authority.” **Pack B**: this tool’s **supplementary readable English appendix** paired with **a rider** stating datasets align with Pack A but the appendix itself **holds zero independent attestations**. Complaints tend to focus on treating **only Pack B as official**, not on Pack B existing.
 3. **Visually converge**: if Word/PDF **study-abroad schemas** exist, remap columns and nomenclature in this workbook to resemble them (**without forging seals or forged letterhead**).
 4. **Additive fixes**: bilingual course abstracts, residency/credit conversion memos, grade ladders—with **department or registrar factual sign-off**. That boosts confidence **without rewriting the authoritative record**.

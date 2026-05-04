@@ -1,6 +1,6 @@
 <!--
   Academic Transcript Layout Converter (Second Revision)
-  Copyright 2026 Fisher Hollique
+  Copyright 2026 Example Project
   Licensed under the Apache License, Version 2.0
   http://www.apache.org/licenses/LICENSE-2.0
 -->
@@ -83,7 +83,7 @@
       </div>
       <div class="toolbox chsi-verify-toolbox">
         <label class="tool-label" for="chsi-verify-code-input">CHSI online verification code</label>
-        <input id="chsi-verify-code-input" type="text" maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Optional; appears in transcript security block" aria-label="CHSI online verification code shown in transcript security block">
+        <input id="chsi-verify-code-input" type="text" maxlength="64" value="SAMPLE_CODE_DO_NOT_VERIFY" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Optional; appears in transcript security block" aria-label="CHSI online verification code shown in transcript security block">
         <div class="chsi-sidebar-guide" lang="en">
           <p class="chsi-sidebar-guide-title">CHSI (author)</p>
           <p><strong>Obtaining the code.</strong> At <a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">chsi.com.cn</a>, open your archive, request an online verification report, and paste the code here. It appears in the transcript security section for reviewers.</p>
@@ -99,6 +99,15 @@
         <div class="tool-buttons">
           <button type="button" id="add-course-row">Add Row</button>
           <button type="button" id="remove-course-row">Remove Last Row</button>
+        </div>
+        <div class="excel-import-block">
+          <span class="tool-label excel-import-section-label">Bulk course import</span>
+          <p class="excel-import-hint" role="note"></p>
+          <button type="button" id="download-import-template-btn">Download CSV template</button>
+          <label class="tool-label excel-import-file-label" for="excel-upload">File</label>
+          <input id="excel-upload" type="file" accept=".csv,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+          <button type="button" id="import-excel-btn">Import into selected term</button>
+          <p class="import-disclaimer" role="note"></p>
         </div>
       </div>
       <div class="toolbox">
@@ -151,8 +160,8 @@
       <div class="toolbox">
         <label class="tool-label" for="term-order">Term Season Order</label>
         <select id="term-order">
+          <option value="fall-spring" selected>Fall then Spring</option>
           <option value="spring-fall">Spring then Fall</option>
-          <option value="fall-spring">Fall then Spring</option>
         </select>
         <label class="tool-label" for="term-year-1">Year for Term 1</label>
         <input id="term-year-1" type="number" min="2000" max="2100" step="1">
@@ -178,13 +187,13 @@
         <p id="upload-diagnostics" class="upload-diagnostics status-neutral">Uploads: Ready</p>
       </div>
       <details class="editor-supplemental-disclosure security-audit-writer-guide" lang="en">
-        <summary class="editor-supplemental-summary">Security block, UTC, and QR (author reference)</summary>
+        <summary class="editor-supplemental-summary">Security block, UTC & QR (matches transcript; author notes)</summary>
         <div class="security-audit-writer-guide-body" role="note">
-          <p><strong>Audience.</strong> Transcript security text targets reviewers; this section covers timing semantics, limitations, and troubleshooting.</p>
-          <p><strong>Timestamps.</strong> Fingerprint and PNG-queue lines use the <strong>browser local clock</strong>. <strong>Export reference time (UTC)</strong> is queried at export from a public UTC API. None constitutes legal or institutional attestation.</p>
-          <p><strong>UTC unavailable.</strong> Offline messaging may appear; export continues. Use local timestamps and the integrity hash.</p>
-          <p><strong>Print cues.</strong> VOID microprint, watermark, and pattern support visual screening; official stock and seals follow registrar policy.</p>
-          <p><strong>QR payload.</strong> Encodes export-bound snapshots (form fields, HTML digest, log references) for file-to-export reconciliation only—not certification. If the QR area is blank, see below.</p>
+          <p><strong>Audience.</strong> On-transcript security copy is for <strong>reviewers</strong>; this foldout is for you as author—semantics, limits, and fixes.</p>
+          <p><strong>Timestamps.</strong> Fingerprint and PNG-queue lines use the <strong>browser local clock</strong>. <strong>UTC reference</strong> is taken at export from public time sources; <strong>not</strong> legal or institutional attestation.</p>
+          <p><strong>UTC detail.</strong> Parallel public sources, <strong>first success</strong>; if all fail, labeled <strong>browser UTC</strong>. Reconcile on local timestamps + content hash (not a substitute for issuer records).</p>
+          <p><strong>Print cues.</strong> Microprint, watermark, VOID tiling—visual screening only; official stock and seals follow the issuer.</p>
+          <p><strong>QR.</strong> Export-bound snapshot (sidebar fields, transcript HTML digest, compliance log refs)—file ↔ export pairing; <strong>supplementary</strong> to CHSI/registrar checks only. Blank QR area: see below.</p>
           <div id="export-qr-fallback-wrap" class="export-qr-fallback-wrap" hidden>
             <p id="export-qr-fallback-lib" class="export-qr-fallback-note export-qr-fallback-lib-note" lang="en" hidden><strong>QR library missing:</strong> place <code>qrcode.min.js</code> (not qrious) next to <code>index.html</code> and open via HTTP (not <code>file://</code>).</p>
             <p id="export-qr-fallback-render" class="export-qr-fallback-note export-qr-fallback-render-note" lang="en" hidden><strong>QR render blocked:</strong> tracking protection or strict canvas policies may prevent drawing. Try relaxing protections for this origin, allowlisting the site, or serving from <code>127.0.0.1</code> / <code>localhost</code>.</p>
@@ -220,10 +229,10 @@
           <span id="logo-placeholder">LOGO</span>
         </div>
         <div class="school-meta centered">
-          <h1 data-edit-label="Institution Name"><span class="inline-edit-target">Fayette Institute of Technology</span></h1>
+          <h1 data-edit-label="Institution Name"><span class="inline-edit-target">Example University</span></h1>
           <p data-edit-label="Issuing Office"><span class="inline-edit-target">Office of the University Registrar</span></p>
           <p data-edit-label="Document Title"><span class="inline-edit-target">Academic Transcript</span></p>
-          <p class="institution-address" data-edit-label="Institution Address"><span class="inline-edit-target">88 West Academic Loop, Boston, MA 02115, USA</span></p>
+          <p class="institution-address" data-edit-label="Institution Address"><span class="inline-edit-target">123 Example Street, Example City, EX 00000, USA</span></p>
         </div>
         <div class="header-spacer" aria-hidden="true"></div>
       </header>
@@ -236,32 +245,32 @@
         <p><strong>Document ID:</strong> <span id="document-id">Pending</span></p>
 
         <div class="security-audit-subsection security-audit-chsi">
-          <p><strong>Identity and enrollment (CHSI)</strong></p>
-          <p>For PRC credentials, reviewers may corroborate identity and enrollment via the China Higher Education Student Information and Career Center (<a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>).</p>
-          <p class="audit-inline-note"><strong>Reviewer procedure:</strong> On CHSI, use <em>Online Verification</em> with the code below. CHSI is authoritative; this sheet is user-produced layout only.</p>
-          <p class="chsi-verify-line-transcript"><strong>CHSI online verification code:</strong> <code id="chsi-verify-code-display" class="chsi-verify-code-display">Not provided</code></p>
-          <p class="audit-inline-note"><strong>Filing:</strong> When permitted, submit with CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> for a single review pass.</p>
+          <p><strong>CHSI verification (reviewers)</strong></p>
+          <p>For PRC credentials, identity and enrollment status are established by <a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>; this sheet is user layout only.</p>
+          <p class="audit-inline-note"><strong>Verification:</strong> CHSI <em>Online Verification</em> + code below. CHSI prevails over this layout.</p>
+          <p class="chsi-verify-line-transcript"><strong>CHSI online verification code:</strong> <code id="chsi-verify-code-display" class="chsi-verify-code-display">SAMPLE_CODE_DO_NOT_VERIFY</code></p>
+          <p class="audit-inline-note"><strong>Submission:</strong> Where policy allows, pair with CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> for side-by-side review.</p>
         </div>
 
         <p><strong>Integrity check (SHA-256):</strong> <span id="integrity-hash">Pending</span></p>
         <p><strong>Last exported PNG digest:</strong> <span id="export-file-hash">Pending</span></p>
-        <p class="audit-inline-note"><strong>Integrity hash (reviewers):</strong> Truncated SHA-256 of editable content at the times below. Supports reconciliation with another copy or internal records; <strong>not</strong> university- or CHSI-issued.</p>
+        <p class="audit-inline-note"><strong>Content hash (reconciliation):</strong> Truncated SHA-256 of editable content at the timestamps below—cross-check copies or internal files; <strong>not</strong> registrar- or CHSI-issued.</p>
         <p class="audit-time-line"><strong>Layout fingerprint updated (local time):</strong> <span id="transcript-last-edited-display">—</span></p>
         <p class="audit-time-line"><strong>PNG export snapshot queued (local time):</strong> <span id="transcript-export-snapshot-display">—</span></p>
         <p class="audit-time-line"><strong>Export reference time (UTC, public time service):</strong> <span id="trusted-timestamp">Not yet fetched</span></p>
-        <p class="audit-inline-note"><strong>UTC line:</strong> Written at PNG export from a public UTC API to align with the local-time rows above. It is <strong>not</strong> legal or institutional time attestation. If the transcript shows <strong>UTC unavailable (offline)</strong>, rely on the local timestamps and hash only.</p>
+        <p id="transcript-utc-inline-note" class="audit-inline-note"><strong>UTC reference:</strong> Taken at export from public NTP-style sources (first success). <strong>Not</strong> legal/institutional time attestation; if all fail, <strong>browser UTC</strong> is labeled. Reconcile on local timestamps + hash.</p>
 
         <div class="security-audit-subsection security-audit-physical-layer">
-          <p><strong>Print / tamper cues (informational)</strong></p>
-          <p>Background microprint, watermark text, and faint VOID tiling support visual screening for edits or poor reproductions; official stock, seals, and anti-counterfeit measures remain as defined by the issuing registrar.</p>
+          <p><strong>Layout anti-tamper (visual)</strong></p>
+          <p>Microprint, watermark, VOID tiling—quick visual screening only; official stock and seals follow the issuer.</p>
         </div>
 
-        <p class="audit-trust-short"><strong>Scope:</strong> Document ID, hashes, UTC line, CHSI code, and QR carry <strong>tool-generated metadata</strong> for handling and spot checks only. They do <strong>not</strong> replace registrar certification, CHSI outcomes, or any formal authenticity determination.</p>
+        <p class="audit-trust-short"><strong>Metadata scope:</strong> ID, hashes, UTC, CHSI code, QR are <strong>tool metadata</strong> for routing and checks—<strong>not</strong> degree or transcript authenticity findings.</p>
 
         <div class="export-qr-row notranslate" translate="no" lang="en">
           <div>
-            <p class="export-qr-caption"><strong>Integrity QR</strong> (payload bound to this export)</p>
-            <p class="export-qr-caption-follow"><strong>Reviewer use:</strong> Encodes an export-bound snapshot (sidebar fields, transcript HTML digest, compliance log references) to confirm this file matches that export. <strong>Supplementary only</strong>—not accreditation, transcript validation, or a substitute for CHSI or institutional verification.</p>
+            <p class="export-qr-caption"><strong>Integrity QR</strong> (export-bound)</p>
+            <p class="export-qr-caption-follow"><strong>Payload:</strong> Snapshot at export (sidebar fields, transcript HTML digest, compliance log refs). Confirms file ↔ export pairing; <strong>supplementary</strong> to CHSI / registrar verification only.</p>
           </div>
           <div id="export-integrity-qr" class="export-integrity-qr" role="img" aria-label="Export integrity QR code"></div>
         </div>
@@ -274,16 +283,16 @@
             <span id="photo-placeholder">Photo</span>
           </div>
           <div class="info-column">
-            <p data-edit-label="Student Name"><strong>Name:</strong> <span data-pii-mask data-pii-key="studentName">Fisher Hollique</span></p>
-            <p data-edit-label="Student ID"><strong>Student ID:</strong> <span data-pii-mask data-pii-key="studentId">167461-9384</span></p>
-            <p data-edit-label="Date of Birth"><strong>Date of Birth:</strong> <span data-pii-mask data-pii-key="dateOfBirth">09/24/2004</span></p>
-            <p data-edit-label="Date Issued"><strong>Date Issued:</strong> <span data-pii-mask data-pii-key="dateIssued">04/11/2026</span></p>
+            <p data-edit-label="Student Name"><strong>Name:</strong> <span data-pii-mask data-pii-key="studentName">John Doe</span></p>
+            <p data-edit-label="Student ID"><strong>Student ID:</strong> <span data-pii-mask data-pii-key="studentId">000-00-0000</span></p>
+            <p data-edit-label="Date of Birth"><strong>Date of Birth:</strong> <span data-pii-mask data-pii-key="dateOfBirth">01/01/2000</span></p>
+            <p data-edit-label="Date Issued"><strong>Date Issued:</strong> <span data-pii-mask data-pii-key="dateIssued">01/02/2000</span></p>
           </div>
           <div class="info-column">
-            <p data-edit-label="Program"><strong>Program:</strong> <span data-pii-mask data-pii-key="program">Bachelor of Science</span></p>
-            <p data-edit-label="College"><strong>College:</strong> <span data-pii-mask data-pii-key="college">College of Science and Engineering</span></p>
-            <p data-edit-label="Major"><strong>Major:</strong> <span data-pii-mask data-pii-key="major">Computer Science</span></p>
-            <p data-edit-label="Citizenship"><strong>Citizenship:</strong> <span data-pii-mask data-pii-key="citizenship">China</span></p>
+            <p data-edit-label="Program"><strong>Program:</strong> <span data-pii-mask data-pii-key="program">Example Program</span></p>
+            <p data-edit-label="College"><strong>College:</strong> <span data-pii-mask data-pii-key="college">Example College</span></p>
+            <p data-edit-label="Major"><strong>Major:</strong> <span data-pii-mask data-pii-key="major">Example Major</span></p>
+            <p data-edit-label="Citizenship"><strong>Citizenship:</strong> <span data-pii-mask data-pii-key="citizenship">Example Country</span></p>
           </div>
         </div>
       </section>
@@ -291,6 +300,16 @@
       <section class="term-block" data-semester-kind="fall" data-term="Fall 2024">
         <h2 data-edit-label="Term Title 1"><span class="inline-edit-target">Fall 2024</span></h2>
         <table>
+          <colgroup>
+            <col class="term-col-type">
+            <col class="term-col-number">
+            <col class="term-col-desc">
+            <col class="term-col-percent">
+            <col class="term-col-gpt">
+            <col class="term-col-letter">
+            <col class="term-col-credits">
+            <col class="term-col-quality">
+          </colgroup>
           <thead>
             <tr>
               <th>Course Type</th>
@@ -334,6 +353,16 @@
       <section class="term-block" data-semester-kind="spring" data-term="Spring 2025">
         <h2 data-edit-label="Term Title 2"><span class="inline-edit-target">Spring 2025</span></h2>
         <table>
+          <colgroup>
+            <col class="term-col-type">
+            <col class="term-col-number">
+            <col class="term-col-desc">
+            <col class="term-col-percent">
+            <col class="term-col-gpt">
+            <col class="term-col-letter">
+            <col class="term-col-credits">
+            <col class="term-col-quality">
+          </colgroup>
           <thead>
             <tr>
               <th>Course Type</th>
@@ -383,17 +412,17 @@
           <span>Quality Points: <strong id="cum-quality">0.00</strong></span>
           <span>Cumulative GPA: <strong id="cum-gpa">0.00</strong></span>
         </div>
-        <p class="standing" data-edit-label="Academic Standing" data-computed="true"><span class="inline-edit-target">Academic Standing: Good</span></p>
+        <p class="standing" data-edit-label="Academic Standing" data-computed="true"><span class="inline-edit-target">Academic Standing: Example (demo band)</span></p>
         <p class="standing-disclaimer notranslate" translate="no" data-protected="true">Academic Standing is estimated from cumulative GPA using simple demonstration bands in this tool. For layout and sample use only; not an official academic status from any school or authority.</p>
       </section>
 
       <section class="certification">
         <p class="warning-line notranslate" id="tamper-warning-line" translate="no" data-edit-label="Tamper Warning" data-protected="true">Unauthorized alteration is strictly prohibited.</p>
         <p class="sample-line notranslate" id="legal-confirmation-line" translate="no" data-edit-label="Legal Confirmation" data-protected="true">I confirm this document is true and valid, and I accept all related legal responsibility.</p>
-        <p class="cert-meta" data-edit-label="Certification Institution Line"><span class="inline-edit-target">Institution: Fayette Institute of Technology, 88 West Academic Loop, Boston, MA 02115</span></p>
-        <p class="cert-meta" data-edit-label="Issue And Digital Signature"><span class="inline-edit-target">Date of Issue: 04/11/2026 | Digital Signature Hash: FIT-TRX-SAMPLE-5A8C21F1</span></p>
+        <p class="cert-meta" data-edit-label="Certification Institution Line"><span class="inline-edit-target">Institution: Example University, 123 Example Street, Example City, EX 00000</span></p>
+        <p class="cert-meta" data-edit-label="Issue And Digital Signature"><span class="inline-edit-target">Date of Issue: 01/02/2000 | Digital Signature Hash: SAMPLE-SIGNATURE-HASH-NOT-VALID</span></p>
         <div class="signature-row">
-          <div class="sign-box"><span data-edit-label="Signature Label"><span class="inline-edit-target">Registrar Signature</span></span></div>
+          <div class="sign-box"><span data-edit-label="Signature Label"><span class="inline-edit-target">Registrar's Personal Signature</span></span></div>
           <div class="sign-box sign-ssn-box">
             <span id="personal-ssn-label" class="sign-label-fixed" data-protected="true">Government ID (18-digit)</span><span id="personal-ssn-display" class="sign-ssn-display notranslate" translate="no" aria-hidden="true"></span>
           </div>
@@ -441,6 +470,7 @@
   <script src="./qrcode.min.js"></script>
   <script src="./html2canvas.min.js"></script>
   <script src="./i18n.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <script src="./script.js"></script>
 </body>
 </html>

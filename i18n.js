@@ -5,6 +5,19 @@
 (function () {
   "use strict";
 
+  /** Escape text so it is safe inside HTML element contents (prevents XSS when assigned to innerHTML). */
+  function escapeHtml(raw) {
+    if (raw == null) {
+      return "";
+    }
+    return String(raw)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   const PACK = {
     en: {
       htmlLang: "en",
@@ -19,44 +32,52 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       authTitle: "Institutional Authorization",
       authText: "Authorized upon official review; this document is true and valid.",
       footerNote: "For personal use only. This document is true and valid.",
+      importAlertNoFile: "Please select an Excel or CSV file first.",
+      importAlertNoLib:
+        "Spreadsheet library failed to load. Serve this page over HTTP(S) and allow cdn.sheetjs.com (or bundle xlsx locally).",
+      importAlertBadExt: "Unsupported file type. Use .csv, .xlsx, or .xls.",
+      importDiagTemplateOk: "Import: CSV template downloaded ({filename}, UTF-8 BOM).",
+      importDiagReading: "Import: Reading file…",
+      importDiagResult: "Import: {added} row(s) appended; {skipped} skipped. Reconcile with the official record.",
+      importDiagFailPrefix: "Import failed:",
       personalSsnLabel: "Government ID (18-digit)",
       standingDisclaimer:
         "Academic Standing is estimated from cumulative GPA using simple demonstration bands in this tool. For layout and sample use only; not an official academic status from any school or authority.",
       docIdLabel: "Document ID:",
       docIdPending: "Pending",
-      chsiBlockTitle: "Identity and enrollment (CHSI)",
+      chsiBlockTitle: "CHSI verification (reviewers)",
       chsiBlockP1:
-        'For PRC credentials, reviewers may corroborate identity and enrollment via the China Higher Education Student Information and Career Center (<a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>).',
-      chsiProcedure: "Reviewer procedure:",
+        'For PRC credentials, identity and enrollment status are established by <a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>; this sheet is user layout only.',
+      chsiProcedure: "Verification:",
       chsiProcedureBody:
-        "On CHSI, use <em>Online Verification</em> with the code below. CHSI is authoritative; this sheet is user-produced layout only.",
+        "CHSI <em>Online Verification</em> + code below. CHSI prevails over this layout.",
       chsiCodeLine: "CHSI online verification code:",
-      chsiFiling: "Filing:",
+      chsiFiling: "Submission:",
       chsiFilingBody:
-        'When permitted, submit with CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> for a single review pass.',
+        'Where policy allows, pair with CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> for side-by-side review.',
       integrityLabel: "Integrity check (SHA-256):",
       exportHashLabel: "Last exported PNG digest:",
-      integrityNoteTitle: "Integrity hash (reviewers):",
+      integrityNoteTitle: "Content hash (reconciliation):",
       integrityNoteBody:
-        "Truncated SHA-256 of editable content at the times below. Supports reconciliation with another copy or internal records; <strong>not</strong> university- or CHSI-issued.",
+        "Truncated SHA-256 of editable content at the timestamps below—cross-check copies or internal files; <strong>not</strong> registrar- or CHSI-issued.",
       fpLine: "Layout fingerprint updated (local time):",
       pngQueueLine: "PNG export snapshot queued (local time):",
       utcLine: "Export reference time (UTC, public time service):",
       utcNotFetched: "Not yet fetched",
-      utcNoteTitle: "UTC line:",
+      utcNoteTitle: "UTC reference:",
       utcNoteBody:
-        "Written at PNG export from a public UTC API to align with the local-time rows above. It is <strong>not</strong> legal or institutional time attestation. If the transcript shows <strong>UTC unavailable (offline)</strong>, rely on the local timestamps and hash only.",
-      printCueTitle: "Print / tamper cues (informational)",
+        "Taken at export from public NTP-style sources (first success). <strong>Not</strong> legal/institutional time attestation; if all fail, <strong>browser UTC</strong> is labeled. Reconcile on local timestamps + hash.",
+      printCueTitle: "Layout anti-tamper (visual)",
       printCueBody:
-        "Background microprint, watermark text, and faint VOID tiling support visual screening for edits or poor reproductions; official stock, seals, and anti-counterfeit measures remain as defined by the issuing registrar.",
-      scopeShortTitle: "Scope:",
+        "Microprint, watermark, VOID tiling—quick visual screening only; official stock and seals follow the issuer.",
+      scopeShortTitle: "Metadata scope:",
       scopeShortBody:
-        "Document ID, hashes, UTC line, CHSI code, and QR carry <strong>tool-generated metadata</strong> for handling and spot checks only. They do <strong>not</strong> replace registrar certification, CHSI outcomes, or any formal authenticity determination.",
+        "ID, hashes, UTC, CHSI code, QR are <strong>tool metadata</strong> for routing and checks—<strong>not</strong> degree or transcript authenticity findings.",
       qrCaption: "Integrity QR",
-      qrCaptionStrong: "(payload bound to this export)",
-      qrFollowTitle: "Reviewer use:",
+      qrCaptionStrong: "(export-bound)",
+      qrFollowTitle: "Payload:",
       qrFollowBody:
-        "Encodes an export-bound snapshot (sidebar fields, transcript HTML digest, compliance log references) to confirm this file matches that export. <strong>Supplementary only</strong>—not accreditation, transcript validation, or a substitute for CHSI or institutional verification.",
+        "Snapshot at export (sidebar fields, transcript HTML digest, compliance log refs). Confirms file ↔ export pairing; <strong>supplementary</strong> to CHSI / registrar verification only.",
       qrAria: "Export integrity QR code",
       photoPh: "Photo",
       logoPh: "LOGO",
@@ -95,6 +116,8 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       ackPending: "Legal acknowledgment: Pending",
       utcFetching: "Fetching UTC…",
       utcOffline: "UTC unavailable (offline)",
+      utcBrowserFallback: (iso) =>
+        `${iso} — browser UTC (public time APIs unreachable; not the same as “offline”)`,
       exportBlocked: "Export blocked: confirm legal acknowledgment in the sidebar.",
       exportRendering: "Export: Rendering PNG…",
       exportFailCanvas: "Export failed: html2canvas not loaded",
@@ -118,13 +141,53 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       conversion1: `<strong>Computation.</strong> Per row, enter <strong>percent score (0–100)</strong> and <strong>credits earned</strong> only. <strong>Grade point</strong> and <strong>letter grade</strong> are read exclusively from the ladder above (not manually assigned). <strong>Quality points</strong> = grade point × credits. <strong>Term GPA</strong> = sum of quality points ÷ sum of credits for that term. <strong>Cumulative GPA</strong> = sum of quality points ÷ sum of credits across all terms shown. Course type, course number, and description are for identification only and do not enter the GPA formula.`,
       conversion2: `<strong>Disclaimer.</strong> This ladder is illustrative for this sample only. It is not official grading policy and does not supersede official academic records, degree rules, or institutional policy.`,
       conversion3: `<strong>Transfer credit.</strong> Final recognition of courses and credits rests solely with the receiving institution, including its review of contact hours, syllabus equivalence, and applicable policy.`,
+      /** Sample transcript body when UI language is English (matches default HTML). */
+      transcriptDemo: {
+        byEditLabel: {
+          "Institution Name": "Example University",
+          "Issuing Office": "Office of the University Registrar",
+          "Document Title": "Academic Transcript",
+          "Institution Address": "123 Example Street, Example City, EX 00000, USA",
+          "Certification Institution Line":
+            "Institution: Example University, 123 Example Street, Example City, EX 00000",
+          "Issue And Digital Signature":
+            "Date of Issue: 01/02/2000 | Digital Signature Hash: SAMPLE-SIGNATURE-HASH-NOT-VALID",
+          "Signature Label": "Registrar's Personal Signature",
+        },
+        pii: {
+          studentName: "John Doe",
+          studentId: "000-00-0000",
+          dateOfBirth: "01/01/2000",
+          dateIssued: "01/02/2000",
+          program: "Example Program",
+          college: "Example College",
+          major: "Example Major",
+          citizenship: "Example Country",
+        },
+        coursesBySemester: {
+          fall: [
+            ["CS", "1428", "Foundations of Computer Science I", "96", "4.0", "A", "4.00", "16.00"],
+            ["MATH", "2358", "Discrete Mathematics I", "94", "4.0", "A", "3.00", "12.00"],
+            ["CS", "2308", "Foundations of Computer Science II", "86", "3.0", "B", "3.00", "9.00"],
+            ["ENG", "1320", "College Writing II", "90", "3.7", "A-", "3.00", "11.10"],
+            ["COMM", "1310", "Fund. of Human Communication", "92", "3.7", "A-", "3.00", "11.10"],
+          ],
+          spring: [
+            ["MATH", "2358", "Discrete Mathematics I", "82", "2.7", "B-", "3.00", "8.10"],
+            ["CS", "1428", "Foundations of Computer Science I", "84", "3.0", "B", "4.00", "12.00"],
+            ["HIST", "1310", "History of US to 1877", "91", "3.7", "A-", "3.00", "11.10"],
+            ["ART", "2313", "Introduction to Fine Arts", "95", "4.0", "A", "3.00", "12.00"],
+            ["ENG", "1310", "College Writing I", "93", "4.0", "A", "3.00", "12.00"],
+          ],
+        },
+      },
     },
     zh: {
       htmlLang: "zh-CN",
       docTitle: "学术成绩单版式转换器（第二次修订）",
-      watermark: `本件为使用本工具所做的版式辅助整理，非学校或学信网直接出具的正式凭证。
-仅限本人正当的升学申请与材料说明用途；禁止用于虚构在籍、套取商户或教育优惠等违法违规情形。
-本人保证所填信息真实，知悉本件不能替代有权机构与院校的核验与认证，并愿意承担相应法律后果。`,
+      watermark: `本文件仅供个人教育申请及非商业教育优惠用途。
+本人确认行为属实，并保证所填个人信息真实有效，
+知悉相应法律后果并愿意承担相关责任。`,
       perimeter: "警示：安全底纹纸张 — 涂改或未经授权复制无效",
       tamper: "严禁未经授权涂改。",
       legalConfirm: "本人确认本文件内容真实有效，并承担相关法律责任。",
@@ -132,60 +195,67 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       authTitle: "院校授权声明",
       authText: "经官方审核后方为有效；本件内容真实有效。",
       footerNote: "仅供个人正当用途使用。本件内容真实有效。",
-      personalSsnLabel: "证件号码（最多 18 位数字）",
+      importAlertNoFile: "请先选择 Excel 或 CSV 文件。",
+      importAlertNoLib: "表格解析库未加载。请通过 HTTP(S) 打开页面并允许 cdn.sheetjs.com（或将 xlsx 库置于本地）。",
+      importAlertBadExt: "不支持的扩展名。请使用 .csv、.xlsx 或 .xls。",
+      importDiagTemplateOk: "导入：已下载 CSV 模板（{filename}，UTF-8 BOM）。",
+      importDiagReading: "导入：正在读取文件…",
+      importDiagResult: "导入：已追加 {added} 行；跳过 {skipped} 行。请与官方成绩单核对。",
+      importDiagFailPrefix: "导入失败：",
+      personalSsnLabel: "政府身份证件（18 位数字）",
       standingDisclaimer:
-        "学业状态由本工具按累计 GPA 与内置分档规则自动估算，仅供版式演示参考，不代表任何机构的正式评定。",
+        "学业状态由本工具根据累计 GPA 与简单演示分档规则估算，仅供版式与示范使用；不代表任何学校或主管机构的正式学业状态评定。",
       docIdLabel: "文档编号：",
       docIdPending: "待生成",
-      chsiBlockTitle: "身份与学籍验证（学信网）",
+      chsiBlockTitle: "学信网核验（审核方）",
       chsiBlockP1:
-        '所载学生身份及在学状态，可经中国高等教育学生信息网（<a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">学信网</a>）核验。',
-      chsiProcedure: "审核方操作：",
-      chsiProcedureBody: "在学信网使用<em>在线验证</em>并输入下方验证码；学信网结果为权威依据，本页为使用者自行排版。",
+        '中国大陆高等教育身份与在学状态以学信网（<a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>）为准；本件为用户排版呈现。',
+      chsiProcedure: "验证：",
+      chsiProcedureBody: "学信网<em>在线验证</em> + 下方验证码；学信网结论优先于本版式。",
       chsiCodeLine: "学信网在线验证码：",
-      chsiFiling: "递交建议：",
-      chsiFilingBody: "在允许的情况下，请与《教育部学籍在线验证报告》一并提交，便于一次审阅。",
+      chsiFiling: "递交：",
+      chsiFilingBody: "政策允许时，请与《教育部学籍在线验证报告》一并对照审阅。",
       integrityLabel: "完整性校验（SHA-256）：",
       exportHashLabel: "上次导出 PNG 摘要：",
-      integrityNoteTitle: "完整性哈希（审核方）：",
+      integrityNoteTitle: "内容哈希（对账）：",
       integrityNoteBody:
-        "下方时刻对应的可编辑内容 SHA-256 截断值，用于与另一份副本或内部留档对账；<strong>非</strong>校方或学信网签发。",
-      fpLine: "版式指纹最近变更（本地时间）：",
-      pngQueueLine: "PNG 快照排队（本地时间）：",
-      utcLine: "本次导出—参考时间（UTC，公共服务）：",
+        "可编辑区 SHA-256 截断值，与下方时间戳对应；供副本或内部留档比对，<strong>非</strong>校方或学信网签发。",
+      fpLine: "版式指纹（本地时间）：",
+      pngQueueLine: "PNG 排队（本地时间）：",
+      utcLine: "UTC 参考（公共服务）：",
       utcNotFetched: "尚未获取",
-      utcNoteTitle: "UTC 行说明：",
+      utcNoteTitle: "UTC 参考：",
       utcNoteBody:
-        "导出 PNG 时向公共 UTC 接口写入，与上两行本地时间并列参考；<strong>不构成</strong>法律或机构授时。若成绩单显示<strong>未能获取可信时间（离线）</strong>，请以本地时间行与哈希为准。",
-      printCueTitle: "版式与防伪提示（说明性）",
-      printCueBody: "底纹微印、水印文字与浅色 VOID 平铺用于目视筛查涂改或劣质复印；正式用纸、印章与防伪工艺以出具单位规定为准。",
-      scopeShortTitle: "范围：",
+        "导出时自公共授时源取最先成功一路；<strong>非</strong>法定/机构授时。远端不可达时回退<strong>本机浏览器 UTC</strong>并标注。对账以本地时间两行与本哈希为准。",
+      printCueTitle: "版式防伪（目视）",
+      printCueBody: "微印、水印、VOID 底纹仅供目视初筛；正式用纸与签章以出具方规定为准。",
+      scopeShortTitle: "元数据范围：",
       scopeShortBody:
-        "文档编号、哈希、UTC 行、学信网码与二维码均为<strong>工具生成的元数据</strong>，仅便于流转与抽查；<strong>不能</strong>替代校方认证、学信网结论或任何正式真伪认定。",
-      qrCaption: "校验二维码",
-      qrCaptionStrong: "（与本次导出绑定）",
-      qrFollowTitle: "审核方用途：",
+        "文档编号、哈希、UTC、学信网码、二维码均为<strong>工具侧元数据</strong>，便于流转与抽查；<strong>不构成</strong>学历或成绩真伪认定。",
+      qrCaption: "完整性二维码",
+      qrCaptionStrong: "（绑定导出）",
+      qrFollowTitle: "载荷：",
       qrFollowBody:
-        "编码与本次导出绑定的快照（侧栏字段、成绩单 HTML 摘要、合规日志引用等），用于核对文件与导出是否一致。<strong>仅作补充</strong>，非学历认证、成绩单真伪认定，亦不能替代学信网或校方核验。",
+        "导出瞬间快照（侧栏字段、成绩单 HTML 摘要、合规日志指针）；核对「文件—导出」一致性。<strong>补充手段</strong>，不得替代学信网或校方核验。",
       qrAria: "导出完整性二维码",
       photoPh: "照片",
       logoPh: "校徽",
       photoAlt: "学生照片预览",
       logoAlt: "学校徽标预览",
       wmAlt: "校徽水印预览",
-      termTotals: "学期汇总",
-      cumTotals: "累计汇总",
-      attempted: "计划学时：",
-      earned: "累计学时：",
+      termTotals: "学期合计",
+      cumTotals: "累计合计",
+      attempted: "尝试学分：",
+      earned: "获得学分：",
       gpaHours: "GPA 学时：",
       qualityPts: "质量分：",
       termGpa: "学期 GPA：",
       cumGpa: "累计 GPA：",
       standingLabel: "学业状态",
-      courseHeaders: ["课程性质", "课号", "课程名称", "百分制", "等级点", "等级", "学分", "质量分"],
-      studentStrong: ["姓名：", "学号：", "出生日期：", "签发日期：", "培养层次：", "学院：", "专业：", "国籍："],
+      courseHeaders: ["课程类型", "课号", "课程名称", "百分制", "等级点", "等级", "学分", "质量分"],
+      studentStrong: ["姓名：", "学号：", "出生日期：", "签发日期：", "项目：", "学院：", "专业：", "国籍："],
       scaleHtml: null,
-      chsiEmpty: "（未填写）",
+      chsiEmpty: "未提供",
       termWord: "学期",
       term1: "学期一",
       term2: "学期二",
@@ -205,6 +275,8 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       ackPending: "法律确认：待勾选",
       utcFetching: "正在获取 UTC…",
       utcOffline: "未能获取可信时间（离线）",
+      utcBrowserFallback: (iso) =>
+        `${iso} — 本机浏览器 UTC（公共授时接口均不可用；不等同于“离线”）`,
       exportBlocked: "导出已阻止：请先在侧栏勾选法律确认。",
       exportRendering: "导出：正在渲染 PNG…",
       exportFailCanvas: "导出失败：未加载 html2canvas",
@@ -225,9 +297,47 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
         `无法读取图片：${fn}\n请使用 PNG、JPG、JPEG、WEBP、BMP、GIF、SVG 或 TIFF（HEIC/HEIF 因浏览器而异）。`,
       gradeScaleTitle: "成绩换算参考（百分制 → GPA）",
       gradeScaleSub: "字母等级阶梯（计算以本表为准）",
-      conversion1: `<strong>计算说明。</strong> 每行仅填写<strong>百分制成绩（0–100）</strong>与<strong>获得学分</strong>。<strong>绩点</strong>与<strong>字母等级</strong>仅按上表阶梯读取（不可手改）。<strong>质量分</strong> = 绩点 × 学分。<strong>学期 GPA</strong> = 本学期质量分之和 ÷ 本学期学分之和。<strong>累计 GPA</strong> = 所列学期质量分总和 ÷ 学分总和。课程性质、课号、课程名称仅作标识，不参与公式。`,
+      conversion1: `<strong>计算说明。</strong> 每行仅填写<strong>百分制成绩（0–100）</strong>与<strong>获得学分</strong>。<strong>绩点</strong>与<strong>字母等级</strong>仅按上表阶梯读取（不可手改）。<strong>质量分</strong> = 绩点 × 学分。<strong>学期 GPA</strong> = 本学期质量分之和 ÷ 本学期学分之和。<strong>累计 GPA</strong> = 所列学期质量分总和 ÷ 学分总和。课程类型、课号、课程名称仅作标识，不参与公式。`,
       conversion2: `<strong>免责声明。</strong> 本阶梯仅为本示范件说明用途，非官方评分政策，不替代校方正式成绩存档、学位规则或校内制度。`,
       conversion3: `<strong>转学分。</strong> 课程与学分的最终认定以接收院校为准，包括对学时、大纲对等及适用政策的审查。`,
+      /** Sample transcript body when UI language is Chinese (numeric fields kept consistent with English ladder). */
+      transcriptDemo: {
+        byEditLabel: {
+          "Institution Name": "示例大学",
+          "Issuing Office": "大学注册办公室",
+          "Document Title": "学业成绩单",
+          "Institution Address": "示范路 123 号，示范市，EX 00000，美国",
+          "Certification Institution Line": "院校：示例大学，示范路 123 号，示范市，EX 00000，美国",
+          "Issue And Digital Signature": "签发日期：01/02/2000 | 电子签哈希：SAMPLE-SIGNATURE-HASH-NOT-VALID",
+          "Signature Label": "注册本人签字",
+        },
+        pii: {
+          studentName: "约翰·多伊",
+          studentId: "000-00-0000",
+          dateOfBirth: "01/01/2000",
+          dateIssued: "01/02/2000",
+          program: "示例项目",
+          college: "示例学院",
+          major: "示例专业",
+          citizenship: "示例国家",
+        },
+        coursesBySemester: {
+          fall: [
+            ["CS", "1428", "计算机科学基础 I", "96", "4.0", "A", "4.00", "16.00"],
+            ["MATH", "2358", "离散数学 I", "94", "4.0", "A", "3.00", "12.00"],
+            ["CS", "2308", "计算机科学基础 II", "86", "3.0", "B", "3.00", "9.00"],
+            ["ENG", "1320", "大学英语写作 II", "90", "3.7", "A-", "3.00", "11.10"],
+            ["COMM", "1310", "人类传播学基础", "92", "3.7", "A-", "3.00", "11.10"],
+          ],
+          spring: [
+            ["MATH", "2358", "离散数学 I", "82", "2.7", "B-", "3.00", "8.10"],
+            ["CS", "1428", "计算机科学基础 I", "84", "3.0", "B", "4.00", "12.00"],
+            ["HIST", "1310", "美国历史至 1877", "91", "3.7", "A-", "3.00", "11.10"],
+            ["ART", "2313", "美术概论", "95", "4.0", "A", "3.00", "12.00"],
+            ["ENG", "1310", "大学英语写作 I", "93", "4.0", "A", "3.00", "12.00"],
+          ],
+        },
+      },
     },
   };
 
@@ -243,7 +353,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       "Student ID": "学号",
       "Date of Birth": "出生日期",
       "Date Issued": "签发日期",
-      "Program": "培养层次 / 项目",
+      "Program": "项目",
       "College": "学院",
       "Major": "专业",
       "Citizenship": "国籍",
@@ -316,7 +426,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       termTwo: "Two terms",
       termOne: "Single term (e.g. first-year, one semester)",
       termHint:
-        "<strong>Single-term mode</strong> hides the second term. Use <strong>Term season order</strong> below to control which semester appears first (Fall then Spring, or Spring then Fall).",
+        "<strong>Single-term mode</strong> hides the second term. <strong>Fall then Spring</strong> is the default (typical China intake: autumn term first, then the following spring). Use <strong>Term season order</strong> below if your school files the other way.",
       gradeLadder: "GPA ladder (auto-recalculation)",
       gpaInTitle: "GPA inputs",
       gpaInBody:
@@ -343,19 +453,37 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       legalFollow:
         "<strong>Summary:</strong> You attest that the information is accurate, that use will be lawful, and that exports will not be used to obtain student pricing or benefits without eligibility. This tool <strong>does not</strong> certify academic records; verification remains with your institution and reviewers.",
       uploadDiag: "Upload status",
-      secSummary: "Security block, UTC, and QR (author reference)",
-      secP1: "<strong>Audience.</strong> Transcript security text targets reviewers; this section covers timing semantics, limitations, and troubleshooting.",
+      secSummary: "Security block, UTC & QR (matches transcript; author notes)",
+      secP1:
+        "<strong>Audience.</strong> On-transcript security copy is for <strong>reviewers</strong>; this foldout is for you as author—semantics, limits, and fixes.",
       secP2:
-        "<strong>Timestamps.</strong> Fingerprint and PNG-queue lines use the <strong>browser local clock</strong>. <strong>Export reference time (UTC)</strong> is queried at export from a public UTC API. None constitutes legal or institutional attestation.",
-      secP3: "<strong>UTC unavailable.</strong> Offline messaging may appear; export continues. Use local timestamps and the integrity hash.",
+        "<strong>Timestamps.</strong> Fingerprint and PNG-queue lines use the <strong>browser local clock</strong>. <strong>UTC reference</strong> is taken at export from public time sources; <strong>not</strong> legal or institutional attestation.",
+      secP3:
+        "<strong>UTC detail.</strong> Parallel public sources, <strong>first success</strong>; if all fail, labeled <strong>browser UTC</strong>. Reconcile on local timestamps + content hash (not a substitute for issuer records).",
       secP4:
-        "<strong>Print cues.</strong> VOID microprint, watermark, and pattern support visual screening; official stock and seals follow registrar policy.",
+        "<strong>Print cues.</strong> Microprint, watermark, VOID tiling—visual screening only; official stock and seals follow the issuer.",
       secP5:
-        "<strong>QR payload.</strong> Encodes export-bound snapshots (form fields, HTML digest, log references) for file-to-export reconciliation only—not certification. If the QR area is blank, see below.",
+        "<strong>QR.</strong> Export-bound snapshot (sidebar fields, transcript HTML digest, compliance log refs)—file ↔ export pairing; <strong>supplementary</strong> to CHSI/registrar checks only. Blank QR area: see below.",
       qrLib:
         "<strong>QR library missing:</strong> place <code>qrcode.min.js</code> (not qrious) next to <code>index.html</code> and open via HTTP (not <code>file://</code>).",
       qrRender:
         "<strong>QR render blocked:</strong> tracking protection or strict canvas policies may prevent drawing. Try relaxing protections for this origin, allowlisting the site, or serving from <code>127.0.0.1</code> / <code>localhost</code>.",
+      importSection: "Bulk course import",
+      importHint:
+        "Columns: Subject (or Course Type), Course Number, Description, Percent, Credits. First worksheet only; UTF-8 CSV recommended.",
+      importDownload: "Download CSV template",
+      importRun: "Import into selected term",
+      importFile: "File",
+      importLiability:
+        "<strong>Excel/CSV import.</strong> Each imported course row is equivalent to manual entry. Verify against your official registrar transcript before use. You are solely responsible for accuracy.",
+      importAlertNoFile: "Please select an Excel or CSV file first.",
+      importAlertNoLib:
+        "Spreadsheet library failed to load. Serve this page over HTTP(S) and allow cdn.sheetjs.com (or bundle xlsx locally).",
+      importAlertBadExt: "Unsupported file type. Use .csv, .xlsx, or .xls.",
+      importDiagTemplateOk: "Import: CSV template downloaded ({filename}, UTF-8 BOM).",
+      importDiagReading: "Import: Reading file…",
+      importDiagResult: "Import: {added} row(s) appended; {skipped} skipped. Reconcile with the official record.",
+      importDiagFailPrefix: "Import failed:",
       langLabel: "Language / 语言",
     },
     zh: {
@@ -382,31 +510,31 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       logo: "学校徽标",
       wm: "校徽水印（居中）",
       photo: "学生照片",
-      ssn: "证件号码（最多 18 位数字）",
+      ssn: "政府身份证件（18 位数字）",
       chsi: "学信网在线验证码",
       chsiPh: "选填，显示在成绩单学信网栏目",
-      chsiTitle: "学信网（撰写说明）",
+      chsiTitle: "学信网（撰写者）",
       chsiP1:
         "<strong>获取验证码。</strong> 访问 <a href=\"https://www.chsi.com.cn/\" target=\"_blank\" rel=\"noopener noreferrer\">chsi.com.cn</a>，在学信档案中申请《教育部学籍在线验证报告》，将验证码粘贴到上方；成绩单安全区向审核方展示。",
       chsiP2: "<strong>递交建议。</strong> 在允许的情况下，请与学信网《教育部学籍在线验证报告》一并提交，便于审核方对照。",
       courseRows: "课程行",
-      termOpt0: "学期一（2024 年秋季）",
-      termOpt1: "学期二（2025 年春季）",
+      termOpt0: "学期一（秋季 2024）",
+      termOpt1: "学期二（春季 2025）",
       addRow: "添加一行",
       removeRow: "删除末行",
       termLayout: "成绩单上的学期",
       termTwo: "两学期",
       termOne: "单学期（如大一仅一学期）",
       termHint:
-        "<strong>单学期模式</strong>会隐藏第二个学期板块。请用下方<strong>学期季节顺序</strong>控制页面上哪个学期在前（先秋后春或先春后秋）。",
+        "<strong>单学期模式</strong>会隐藏第二个学期板块。默认与一般中国高校入学顺序一致：<strong>先秋后春</strong>；若校方材料为先春后秋，可在下方<strong>学期季节顺序</strong>中切换。",
       gradeLadder: "GPA 阶梯（自动重算）",
       gpaInTitle: "参与 GPA 的列",
       gpaInBody:
         "仅<strong>百分制成绩</strong>与<strong>学分</strong>进入 GPA 计算；修改后按阶梯即时更新<strong>等级点</strong>、<strong>等级</strong>与<strong>质量分</strong>（质量分 = 等级点 × 获得学分）。",
       nonCalcTitle: "不参与公式的列",
-      nonCalcBody: "<strong>课程性质 / 课号 / 课程名称</strong>仅作说明，不参与公式。",
+      nonCalcBody: "<strong>课程类型 / 课号 / 课程名称</strong>仅作说明，不参与公式。",
       perTitle: "按学期",
-      perLi1: "<strong>计划 / 累计 / GPA 学时</strong>：本学期各课程获得学分之和（本表中三者相同）。",
+      perLi1: "<strong>尝试 / 获得 / GPA 学时</strong>：本学期各课程获得学分之和（本表中三者相同）。",
       perLi2: "<strong>质量分</strong>：各行<strong>质量分</strong>之和。",
       perLi3: "<strong>学期 GPA</strong>：质量分 ÷ GPA 学时。",
       cumTitle: "累计",
@@ -423,20 +551,37 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       legalSpan:
         "本人确认对信息真实性及合法使用承担法律责任，且不会利用导出文件虚假申报商户或教育优惠等资格。",
       legalFollow:
-        "<strong>摘要：</strong>勾选即表示您已阅读并同意上文——确认所填信息真实，合法使用导出内容，且不会凭伪造学籍套取商户或平台学生折扣。本版式工具<strong>不能</strong>认证学位或成绩单，也无法替代机构的身份核验。",
-      uploadDiag: "上传诊断",
-      secSummary: "安全区、UTC 与二维码（撰写参考）",
-      secP1: "<strong>读者对象。</strong> 成绩单安全区面向审核方；此处说明时间含义、限制与排错。",
+        "<strong>摘要：</strong>您确认所填信息准确、使用合法，且不会未取得资格而以导出内容申领学生价或相关优惠。本工具<strong>不能</strong>认证成绩或学历；核验仍归属您的就读院校与审核方。",
+      uploadDiag: "上传状态",
+      secSummary: "安全区、UTC 与二维码（与正文一致；撰写说明）",
+      secP1:
+        "<strong>读者。</strong> 成绩单安全区正文面向<strong>审核方</strong>；本折叠区面向撰写者，说明时间含义、限制与排错。",
       secP2:
-        "<strong>时间戳。</strong> 版式指纹与 PNG 排队时间来自<strong>浏览器本地时钟</strong>；<strong>本次导出—参考时间（UTC）</strong>在导出时向公共 UTC 接口查询。均不构成法律或机构授时。",
-      secP3: "<strong>UTC 不可用。</strong> 可能出现离线提示，仍可导出；请以本地时间行与完整性哈希为准。",
-      secP4: "<strong>印刷提示。</strong> VOID 微印、水印与底纹用于目视筛查；正式用纸与签章以注册部门规定为准。",
+        "<strong>时间戳。</strong> 版式指纹与 PNG 排队为<strong>浏览器本地时钟</strong>。<strong>UTC 参考</strong>在导出时取自公共授时源；<strong>非</strong>法律或机构授时。",
+      secP3:
+        "<strong>UTC 细节。</strong>多路公共源并行，<strong>取最先成功</strong>；均失败则回退<strong>已标注的本机浏览器 UTC</strong>。对账以本地时间两行与内容哈希为准（不能替代校方留档）。",
+      secP4: "<strong>印刷。</strong>微印、水印、VOID 底纹仅供目视初筛；正式用纸与签章以出具方规定为准。",
       secP5:
-        "<strong>二维码载荷。</strong> 绑定导出瞬间的快照（表单字段、HTML 摘要、日志引用等），用于核对文件与导出是否一致，非认证。若二维码区域空白，见下方说明。",
+        "<strong>二维码。</strong>绑定导出快照（侧栏字段、成绩单 HTML 摘要、合规日志引用等），用于核对「文件—导出」是否一致，<strong>仅作补充</strong>，不得替代学信网或校方核验。区域空白见下文。",
       qrLib:
         "<strong>二维码库缺失：</strong>请将 <code>qrcode.min.js</code>（非 qrious）与 <code>index.html</code> 放在同一目录，并通过 HTTP（勿用 <code>file://</code>）打开。",
       qrRender:
         "<strong>二维码渲染被拦截：</strong>跟踪防护或严格 canvas 策略可能阻止绘制。可短暂放宽站点保护、加入白名单，或使用 <code>127.0.0.1</code> / <code>localhost</code> 提供页面。",
+      importSection: "批量导入课程",
+      importHint:
+        "列：Subject/课程类型、Course Number/课号、Description/课程名称、Percent/百分制、Credits/学分。仅读取首张工作表；建议 UTF-8 CSV。",
+      importDownload: "下载 CSV 模板",
+      importRun: "导入到当前学期",
+      importFile: "文件",
+      importLiability:
+        "<strong>Excel/CSV 导入。</strong>每条导入的课程行均视同手工录入。使用前须与校方官方成绩单核对；准确性由使用者自负。",
+      importAlertNoFile: "请先选择 Excel 或 CSV 文件。",
+      importAlertNoLib: "表格解析库未加载。请通过 HTTP(S) 打开页面并允许 cdn.sheetjs.com（或将 xlsx 库置于本地）。",
+      importAlertBadExt: "不支持的扩展名。请使用 .csv、.xlsx 或 .xls。",
+      importDiagTemplateOk: "导入：已下载 CSV 模板（{filename}，UTF-8 BOM）。",
+      importDiagReading: "导入：正在读取文件…",
+      importDiagResult: "导入：已追加 {added} 行；跳过 {skipped} 行。请与官方成绩单核对。",
+      importDiagFailPrefix: "导入失败：",
       langLabel: "Language / 语言",
     },
   };
@@ -493,6 +638,17 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       if (cp[1]) cp[1].innerHTML = s.chsiP2;
     }
     mapLabel("term-select", s.courseRows);
+    const secLbl = document.querySelector(".excel-import-section-label");
+    if (secLbl) secLbl.textContent = s.importSection;
+    const imHint = document.querySelector(".excel-import-hint");
+    if (imHint) imHint.textContent = s.importHint;
+    const dlb = document.getElementById("download-import-template-btn");
+    if (dlb) dlb.textContent = s.importDownload;
+    const ib = document.getElementById("import-excel-btn");
+    if (ib) ib.textContent = s.importRun;
+    mapLabel("excel-upload", s.importFile);
+    const disc = document.querySelector(".import-disclaimer");
+    if (disc) disc.innerHTML = s.importLiability;
     const addB = document.getElementById("add-course-row");
     const rmB = document.getElementById("remove-course-row");
     if (addB) addB.textContent = s.addRow;
@@ -506,7 +662,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
     if (grl) grl.textContent = s.gradeLadder;
     const grt = document.querySelector(".grade-rules-ref .grade-rules-table thead tr");
     if (grt) {
-      grt.innerHTML = PACK[z].gradeTableHead.map((x) => `<th>${x}</th>`).join("");
+      grt.innerHTML = PACK[z].gradeTableHead.map((x) => `<th>${escapeHtml(x)}</th>`).join("");
     }
     const gcap = document.querySelector(".grade-rules-ref .grade-rules-table-caption");
     if (gcap) gcap.textContent = PACK[z].gradeCaption;
@@ -534,8 +690,12 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
     }
     mapLabel("term-order", s.termOrder);
     const to = document.getElementById("term-order");
-    if (to && to.options[0]) to.options[0].textContent = s.springFall;
-    if (to && to.options[1]) to.options[1].textContent = s.fallSpring;
+    if (to) {
+      for (const opt of to.options) {
+        if (opt.value === "fall-spring") opt.textContent = s.fallSpring;
+        if (opt.value === "spring-fall") opt.textContent = s.springFall;
+      }
+    }
     mapLabel("term-year-1", s.y1);
     mapLabel("term-year-2", s.y2);
     const fin = document.querySelectorAll(".toolbox label.tool-label");
@@ -619,7 +779,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       const ps = sa.querySelectorAll(":scope > p");
       if (ps[0]) {
         const idv = document.getElementById("document-id")?.textContent || t.docIdPending;
-        ps[0].innerHTML = `<strong>${t.docIdLabel}</strong> <span id="document-id">${idv}</span>`;
+        ps[0].innerHTML = `<strong>${t.docIdLabel}</strong> <span id="document-id">${escapeHtml(idv)}</span>`;
       }
       const chsi = sa.querySelector(".security-audit-chsi");
       if (chsi) {
@@ -629,19 +789,21 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
         if (cp[2]) cp[2].innerHTML = `<strong>${t.chsiProcedure}</strong> ${t.chsiProcedureBody}`;
         const code = document.getElementById("chsi-verify-code-display")?.textContent || t.chsiEmpty;
         const line = chsi.querySelector(".chsi-verify-line-transcript");
-        if (line) line.innerHTML = `<strong>${t.chsiCodeLine}</strong> <code id="chsi-verify-code-display" class="chsi-verify-code-display">${code}</code>`;
+        if (line) {
+          line.innerHTML = `<strong>${t.chsiCodeLine}</strong> <code id="chsi-verify-code-display" class="chsi-verify-code-display">${escapeHtml(code)}</code>`;
+        }
         const an = chsi.querySelectorAll("p.audit-inline-note");
         if (an[1]) an[1].innerHTML = `<strong>${t.chsiFiling}</strong> ${t.chsiFilingBody}`;
       }
       const integ = Array.from(sa.querySelectorAll(":scope > p")).find((p) => p.querySelector("#integrity-hash"));
       if (integ) {
         const ih = document.getElementById("integrity-hash")?.textContent || t.docIdPending;
-        integ.innerHTML = `<strong>${t.integrityLabel}</strong> <span id="integrity-hash">${ih}</span>`;
+        integ.innerHTML = `<strong>${t.integrityLabel}</strong> <span id="integrity-hash">${escapeHtml(ih)}</span>`;
       }
       const exh = Array.from(sa.querySelectorAll(":scope > p")).find((p) => p.querySelector("#export-file-hash"));
       if (exh) {
         const eh = document.getElementById("export-file-hash")?.textContent || t.docIdPending;
-        exh.innerHTML = `<strong>${t.exportHashLabel}</strong> <span id="export-file-hash">${eh}</span>`;
+        exh.innerHTML = `<strong>${t.exportHashLabel}</strong> <span id="export-file-hash">${escapeHtml(eh)}</span>`;
       }
       const allNotes = sa.querySelectorAll("p.audit-inline-note");
       allNotes.forEach((p) => {
@@ -653,22 +815,20 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       const tls = sa.querySelectorAll("p.audit-time-line");
       if (tls[0]) {
         const v = document.getElementById("transcript-last-edited-display")?.textContent || "—";
-        tls[0].innerHTML = `<strong>${t.fpLine}</strong> <span id="transcript-last-edited-display">${v}</span>`;
+        tls[0].innerHTML = `<strong>${t.fpLine}</strong> <span id="transcript-last-edited-display">${escapeHtml(v)}</span>`;
       }
       if (tls[1]) {
         const v = document.getElementById("transcript-export-snapshot-display")?.textContent || "—";
-        tls[1].innerHTML = `<strong>${t.pngQueueLine}</strong> <span id="transcript-export-snapshot-display">${v}</span>`;
+        tls[1].innerHTML = `<strong>${t.pngQueueLine}</strong> <span id="transcript-export-snapshot-display">${escapeHtml(v)}</span>`;
       }
       if (tls[2]) {
         const v = document.getElementById("trusted-timestamp")?.textContent || t.utcNotFetched;
-        tls[2].innerHTML = `<strong>${t.utcLine}</strong> <span id="trusted-timestamp">${v}</span>`;
+        tls[2].innerHTML = `<strong>${t.utcLine}</strong> <span id="trusted-timestamp">${escapeHtml(v)}</span>`;
       }
-      allNotes.forEach((p) => {
-        const st = p.innerHTML || "";
-        if (st.includes("public UTC") || st.includes("公共 UTC")) {
-          p.innerHTML = `<strong>${t.utcNoteTitle}</strong> ${t.utcNoteBody}`;
-        }
-      });
+      const utcNote = document.getElementById("transcript-utc-inline-note");
+      if (utcNote) {
+        utcNote.innerHTML = `<strong>${t.utcNoteTitle}</strong> ${t.utcNoteBody}`;
+      }
       const phys = sa.querySelector(".security-audit-physical-layer");
       if (phys) {
         const pp = phys.querySelectorAll("p");
@@ -703,7 +863,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       for (let i = 0; i < keys.length; i++) {
         const el = tr.querySelector(`.${keys[i]}`);
         const sp = spans[i + 1];
-        if (sp && el) sp.innerHTML = `${labs[i]}<strong class="${keys[i]}">${el.textContent}</strong>`;
+        if (sp && el) sp.innerHTML = `${labs[i]}<strong class="${keys[i]}">${escapeHtml(el.textContent)}</strong>`;
       }
     });
 
@@ -721,7 +881,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       map.forEach(([id, label], idx) => {
         const el = document.getElementById(id);
         const sp = spans[idx + 1];
-        if (sp && el) sp.innerHTML = `${label}<strong id="${id}">${el.textContent}</strong>`;
+        if (sp && el) sp.innerHTML = `${label}<strong id="${id}">${escapeHtml(el.textContent)}</strong>`;
       });
     }
 
@@ -733,7 +893,7 @@ AND ACCEPT THE CORRESPONDING LEGAL CONSEQUENCES.`,
       if (h4) h4.textContent = t.gradeScaleSub;
       const trh = scale.querySelector("#percent-letter-scale-table thead tr");
       if (trh) {
-        trh.innerHTML = t.gradeTableHead.map((x) => `<th>${x}</th>`).join("");
+        trh.innerHTML = t.gradeTableHead.map((x) => `<th>${escapeHtml(x)}</th>`).join("");
       }
       const cap = scale.querySelector(".grade-rules-table-caption");
       if (cap) cap.textContent = t.gradeCaption;

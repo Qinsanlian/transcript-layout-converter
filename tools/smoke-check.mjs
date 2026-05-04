@@ -35,16 +35,54 @@ for (const [name, expected] of Object.entries(VENDOR_SHA256)) {
 
 const indexPath = path.join(ROOT, "index.html");
 const index = fs.readFileSync(indexPath, "utf8");
-const requiredIds = ["transcript-page", "lang-select", "authorization-title", "gpa-policy-scale"];
+const requiredIds = [
+  "transcript-page",
+  "lang-select",
+  "authorization-title",
+  "gpa-policy-scale",
+  "transcript-utc-inline-note",
+  "document-id",
+  "integrity-hash",
+  "export-file-hash",
+  "trusted-timestamp",
+  "export-integrity-qr",
+  "chsi-verify-code-display",
+  "excel-upload",
+  "import-excel-btn",
+  "export-png",
+  "legal-ack",
+];
 for (const id of requiredIds) {
   if (!index.includes(`id="${id}"`)) fail(`index.html: missing id="${id}"`);
 }
-const scriptOrder = ["./qrcode.min.js", "./html2canvas.min.js", "./i18n.js", "./script.js"];
+if (!index.includes('class="security-audit')) {
+  fail(`index.html: missing security-audit section (class="security-audit")`);
+}
+
+const scriptOrder = ["./qrcode.min.js", "./html2canvas.min.js", "./i18n.js"];
 let pos = 0;
 for (const src of scriptOrder) {
   const i = index.indexOf(src, pos);
   if (i < 0) fail(`index.html: missing or out-of-order script ${src}`);
   pos = i + src.length;
+}
+const i18nScriptEnd = index.indexOf("./i18n.js");
+if (i18nScriptEnd < 0) fail("index.html: missing ./i18n.js");
+const afterI18n = index.slice(i18nScriptEnd);
+const scriptJsRel = afterI18n.indexOf("./script.js");
+if (scriptJsRel < 0) fail("index.html: ./script.js must load after i18n.js");
+const betweenI18nAndApp = afterI18n.slice(0, scriptJsRel);
+const xlsxCdn = "cdn.sheetjs.com";
+const xlsxLocal = "./xlsx.full.min.js";
+const hasXlsxCdn = betweenI18nAndApp.includes(xlsxCdn) && betweenI18nAndApp.toLowerCase().includes("xlsx");
+const hasXlsxLocal = betweenI18nAndApp.includes(`src="${xlsxLocal}"`);
+if (!hasXlsxCdn && !hasXlsxLocal) {
+  fail(
+    "index.html: SheetJS missing between i18n.js and script.js — use CDN block or local <script src=\"./xlsx.full.min.js\"> (see README)."
+  );
+}
+if (hasXlsxCdn && hasXlsxLocal) {
+  fail("index.html: use either CDN SheetJS or local ./xlsx.full.min.js, not both");
 }
 
 const i18nPath = path.join(ROOT, "i18n.js");
@@ -57,4 +95,4 @@ if (!i18n.includes("window.applyTranscriptLanguage._applyPage = applyTranscriptP
   fail("i18n.js: missing _applyPage assignment to applyTranscriptPageStrings");
 }
 
-console.log("smoke-check: ok (vendor sha256, index.html, i18n.js wiring)");
+console.log("smoke-check: ok (vendor sha256, index.html ids + scripts, i18n.js wiring)");
