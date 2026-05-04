@@ -1,40 +1,12 @@
-<<<<<<< HEAD
-# 中国学术成绩单格式转换器（第二次修订）
-
-静态网页成绩单版式与 GPA 辅助工具（`package.json` 工程名：`transcript-layout-converter-bilingual`）。请用 `serve.sh` 或任意 HTTP 根目录指向本文件夹打开（勿用 `file://`，二维码与部分授时接口受限）。
-=======
 # 学术成绩单版式转换器（第二次修订）
 
 一个帮你把成绩单排版整清楚的工具。
 它不是文凭认证系统，不能替代学校盖章，更不是"拿来就能充数"的假证。
 它只是一个排版辅助工具。好用的那种。
->>>>>>> af64f9611c621c7aa64703271befddad1c573519
 
 ---
 
-<<<<<<< HEAD
-- **静态检查（无依赖）**：`npm run smoke` 或 `node tools/smoke-check.mjs`  
-  校验 vendored 脚本 SHA-256、`index.html` 关键节点与脚本顺序、`i18n.js` 接线。
-- **语法快速检查**：`npm run check`（`node --check` 于 `script.js` / `i18n.js`）。
-- **CI**：推送或 PR 至 `main` / `master` 时，GitHub Actions 会运行 `npm run smoke`。
-- 浏览器手测：语言切换、Excel/CSV 导入、导出 PNG、隐私模糊开关。
-
-## SheetJS（Excel/CSV 导入）
-
-默认自 CDN 加载（见 `index.html` 中 `cdn.sheetjs.com` 的 `xlsx.full.min.js`）。**离线或内网**可改为本地文件：
-
-1. 从 [SheetJS CDN 发行页](https://cdn.sheetjs.com/) 下载与当前版本一致的 `xlsx.full.min.js`（或与 `index.html` 中 URL 版本一致的全量构建）。
-2. 将文件保存到与本 `index.html` **同一目录**，命名为 `xlsx.full.min.js`。
-3. 在 `index.html` 中**删除**指向 `cdn.sheetjs.com` 的 `<script>` 行，并**仅保留**一行：
-
-   ```html
-   <script src="./xlsx.full.min.js"></script>
-   ```
-
-4. 该行须仍位于 `./i18n.js` 之后、`./script.js` 之前。`npm run smoke` 要求 **CDN 与本地二选一**，不可同时存在两处引用。
-=======
 ## 这东西到底是干啥的
->>>>>>> af64f9611c621c7aa64703271befddad1c573519
 
 你是不是也遇到过这种情况——学校开的中文成绩单上密密麻麻全是课，但申请学校、交材料的时候，对方非要英文版，还要求算好 GPA。
 
