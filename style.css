@@ -65,7 +65,8 @@ body {
   color: #1d3f63;
 }
 
-.editor-field input {
+.editor-field input,
+.editor-field select {
   width: 100%;
   border: 1px solid #bfd0e8;
   border-radius: 6px;
@@ -75,10 +76,40 @@ body {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.editor-field input:focus {
+.editor-field input:focus,
+.editor-field select:focus {
   outline: none;
   border-color: #5a84bd;
   box-shadow: 0 0 0 2px rgba(90, 132, 189, 0.18);
+}
+
+.editor-field[data-grade-composite-field="1"] {
+  gap: 6px;
+}
+
+.editor-field[data-grade-composite-field="1"] .editor-grade-type {
+  width: 100%;
+}
+
+.editor-field[data-grade-composite-field="1"] .editor-grade-value-slot {
+  display: grid;
+  gap: 4px;
+}
+
+.editor-field[data-grade-composite-field="1"] .editor-grade-percent-input {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.editor-field[data-grade-composite-field="1"] .editor-grade-keyword-select {
+  width: 100%;
+}
+
+.editor-field[data-grade-composite-field="1"] .editor-grade-exempt-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #4a5a6e;
 }
 
 .toolbox {
@@ -87,6 +118,37 @@ body {
   padding: 10px;
   margin-bottom: 10px;
   background: #f6f9ff;
+}
+
+/* Use div (not p): avoids .editor-panel p margin/color overrides and empty-<p> collapse in some UAs. */
+.editor-panel .toolbox .toolbox-section-title {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 10px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #c9d8ee;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #143a66;
+  line-height: 1.35;
+  min-height: 1.35em;
+}
+
+.editor-panel .toolbox .toolbox-section-lead {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #3d5270;
+}
+
+.toolbox-domestic-gpa-settings {
+  background: #f4f8ff;
+  border-color: #c5d6ef;
 }
 
 .grade-rules-ref {
@@ -167,8 +229,15 @@ body {
   text-transform: uppercase;
 }
 
+.grade-rules-ref {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .grade-rules-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 11px;
   margin-bottom: 8px;
@@ -183,6 +252,106 @@ body {
   border-bottom: 1px solid #e8eef8;
   padding: 5px 6px;
   text-align: left;
+}
+
+/* Transcript GPA ladder: th defaults to centered in browsers — keep 百分区间列与表体靠左 */
+#percent-letter-scale-table th,
+#percent-letter-scale-table td {
+  text-align: left;
+}
+
+.grade-rules-table td:first-child:not(.grade-ladder-band-td),
+#percent-letter-scale-table td:first-child:not(.grade-ladder-band-td) {
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.35;
+}
+
+/* GPA ladder first column: one line (band + *{…} never wraps); column always left */
+.grade-ladder-band-td {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0;
+  min-width: 0;
+  line-height: 1.35;
+  word-break: normal;
+  text-align: left;
+}
+
+.grade-rules-table thead th:first-child,
+#percent-letter-scale-table thead th:first-child {
+  text-align: left;
+}
+
+/* Sidebar + transcript GPA ladder: single-line rows */
+.grade-rules-table thead th,
+.grade-rules-table tbody td,
+#percent-letter-scale-table thead th,
+#percent-letter-scale-table tbody td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Solo bands (90–92, …): left in fixed-width box for column rhythm */
+.grade-ladder-range-solo {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: calc(var(--gl-prefix-ch, 14) * 1ch);
+  text-align: left;
+  padding-right: 0.25em;
+  white-space: nowrap;
+}
+
+/*
+ * Tier rows: no min-width here — a wide min-width + text-align:left left a blank band
+ * between `|` and `*`; width follows `97 – 100 | ` so `*` sits flush after the pipe’s trailing space.
+ */
+.grade-ladder-range-with-tier {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  text-align: left;
+  padding-right: 0;
+  white-space: nowrap;
+}
+
+.grade-ladder-tier-wrap {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.grade-ladder-tier-star {
+  flex: 0 0 auto;
+}
+
+.grade-ladder-tier-sp {
+  flex: 0 0 auto;
+  white-space: pre;
+}
+
+.grade-ladder-tier-brace {
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.grade-ladder-tier-mid {
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: center;
+  padding: 0 0.12em;
+  white-space: nowrap;
+}
+
+/* Whole band cell uses table body font (same as Letter / Grade Point), not monospace */
+.grade-ladder-band-td,
+.grade-ladder-band-td * {
+  font-family: inherit;
+  font-variant-numeric: normal;
 }
 
 .grade-rules-table th {
@@ -271,6 +440,13 @@ body {
   margin: 6px 0 0;
   font-size: 11px;
   line-height: 1.4;
+  color: #4b556b;
+}
+
+.export-pdf-layout-hint {
+  margin: 4px 0 10px;
+  font-size: 11px;
+  line-height: 1.45;
   color: #4b556b;
 }
 
@@ -365,7 +541,9 @@ input.term-control-muted {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  overflow: visible;
+  /* Clip rotated/translated layers so they don’t inflate scrollHeight (breaks html2canvas: huge PNG + missing footer). */
+  overflow: hidden;
+  contain: paint;
 }
 
 .watermark-stack--rot180 {
@@ -375,27 +553,28 @@ input.term-control-muted {
 
 .watermark-stack .watermark-layer {
   position: absolute;
-  top: 0.38in;
-  right: 0.06in;
-  bottom: 0.22in;
-  left: 0.22in;
-  padding-top: 0.1in;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
+  transform: translate(-50%, -50%) rotate(-5deg);
+  transform-origin: center center;
   color: rgba(145, 10, 10, 0.15);
   font-size: 14px;
   font-weight: 700;
   line-height: 1.65;
-  transform: translateX(6.25cm) rotate(-5deg);
-  transform-origin: center center;
+  padding: 2in;
   white-space: pre-wrap;
-  overflow: visible;
+  text-align: center;
+  overflow: hidden;
 }
 
 .center-watermark-image {
   position: absolute;
   inset: 0;
-  width: 4.35in;
-  height: 4.35in;
+  width: 5in;
+  height: 5in;
   margin: auto;
   display: grid;
   place-items: center;
@@ -406,10 +585,11 @@ input.term-control-muted {
 .center-watermark-image img {
   width: 100%;
   height: 100%;
-  max-width: 4.35in;
-  max-height: 4.35in;
+  max-width: 5in;
+  max-height: 5in;
   object-fit: contain;
-  opacity: 0.18;
+  /* Slightly stronger than before so the emblem reads at a glance; still well under foreground (z-index 5). */
+  opacity: 0.6;
   display: none;
 }
 
@@ -443,10 +623,27 @@ input.term-control-muted {
 }
 
 #cum-gpa,
-.term-gpa {
+#cum-gpa-domestic,
+.term-gpa,
+.term-gpa-domestic {
   color: #4a3b22;
   font-weight: 800;
   font-size: 1.05em;
+}
+
+.domestic-gpa-sidebar-note {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #3a4e66;
+  margin: 6px 0 0;
+}
+
+.domestic-gpa-editor-audit-note,
+.domestic-gpa-transcript-audit {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #3a3a3a;
+  margin: 6px 0 0;
 }
 
 .transcript-page .school-meta [data-edit-label="Document Title"] {
@@ -470,11 +667,11 @@ input.term-control-muted {
 }
 
 .transcript-page .term-block col.term-col-desc {
-  width: 48%;
+  width: 44%;
 }
 
 .transcript-page .term-block col.term-col-percent {
-  width: 7%;
+  width: 11%;
 }
 
 .transcript-page .term-block col.term-col-gpt {
@@ -523,6 +720,24 @@ input.term-control-muted {
   hyphens: auto;
   word-break: break-word;
   line-height: 1.38;
+}
+
+.transcript-page .term-block td.grade-percent-cell {
+  vertical-align: middle;
+  text-align: right;
+  line-height: 1.25;
+}
+
+.transcript-page .term-block td.grade-percent-cell .grade-percent-display {
+  display: inline-block;
+  min-width: 2rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* superseded by #gpa-policy-scale .grade-scale-disclaimer — keep minimal fallback */
+#grade-scale-disclaimer.grade-scale-disclaimer {
+  box-sizing: border-box;
 }
 
 .transcript-page .term-block tbody tr:nth-child(even) td {
@@ -669,7 +884,9 @@ p {
 
 .security-audit a {
   color: #0b3d91;
-  word-break: break-all;
+  /* break-all stacks one glyph per line when the raster clone is narrow; wrap whole tokens instead */
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 .security-audit code {
@@ -864,8 +1081,17 @@ p {
 .student-layout {
   display: grid;
   grid-template-columns: 1.15in 1fr 1fr;
+  grid-template-rows: auto auto;
   gap: 6px 16px;
   align-items: start;
+}
+
+.transcript-page .student-layout > .photo-box {
+  grid-row: 1 / span 2;
+}
+
+.transcript-page .student-layout > .info-column--student-contact {
+  grid-column: 2 / span 2;
 }
 
 .photo-box {
@@ -896,7 +1122,7 @@ p {
   gap: 2px;
 }
 
-.transcript-page .student-layout > .info-column:nth-of-type(3) {
+.transcript-page .student-layout > .info-column + .info-column {
   border-left: 1px solid #e6e6e6;
   padding-left: 14px;
   margin-left: 2px;
@@ -908,6 +1134,89 @@ p {
 
 .term-block td {
   padding: 5px 8px;
+}
+
+/* Course row reorder (▲/▼): inside sidebar “Description” (course name) input, right end. */
+.editor-field[data-row-move-label] {
+  display: grid;
+  gap: 5px;
+}
+
+.editor-field[data-row-move-label] .editor-input-row-with-moves {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #bfd0e8;
+  border-radius: 6px;
+  background: #fcfeff;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.editor-field[data-row-move-label] .editor-input-row-with-moves:focus-within {
+  border-color: #5a84bd;
+  box-shadow: 0 0 0 2px rgba(90, 132, 189, 0.18);
+}
+
+.editor-field[data-row-move-label] .editor-input-row-with-moves > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.editor-field[data-row-move-label] .editor-input-row-with-moves > .course-row-actions {
+  position: static;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  flex: 0 0 auto;
+  opacity: 1;
+  z-index: auto;
+  margin: 0;
+  padding: 2px 4px;
+  border-left: 1px solid #e2ebf7;
+  background: #eef3f9;
+}
+
+.course-row-move-top,
+.course-row-move-up,
+.course-row-move-down,
+.course-row-move-bottom {
+  display: block;
+  width: 18px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  font-size: 9px;
+  color: #6b7a8f;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.course-row-move-top:hover:not(:disabled),
+.course-row-move-up:hover:not(:disabled),
+.course-row-move-down:hover:not(:disabled),
+.course-row-move-bottom:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.course-row-move-top:disabled,
+.course-row-move-up:disabled,
+.course-row-move-down:disabled,
+.course-row-move-bottom:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 table {
@@ -960,6 +1269,12 @@ th {
   align-items: flex-end;
   padding-bottom: 4px;
   font-size: 12px;
+}
+
+.transcript-page .sign-box[data-signature-protected="true"] {
+  user-select: none;
+  cursor: default;
+  caret-color: transparent;
 }
 
 .sign-box.sign-ssn-box {
@@ -1110,7 +1425,8 @@ th {
   gap: 12px;
 }
 
-.scale {
+/* 左侧：阶梯表 + 条件换算说明 + 三条脚注（与右侧授权区并排） */
+.bottom-row > .scale-column {
   flex: 2 1 0;
   min-width: 0;
   margin-top: 0;
@@ -1118,10 +1434,87 @@ th {
   margin-right: 0;
   max-width: none;
   width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.scale {
+  margin-top: 0;
+  margin-left: 0;
+  margin-right: 0;
+  max-width: none;
+  width: auto;
+}
+
+#gpa-policy-scale {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 #percent-letter-scale-table {
+  width: max-content;
+  min-width: 100%;
+}
+
+/*
+ * English ladder strings (percent band + tier refs) run wider than 中文; keep the full table
+ * visible in the transcript column and sidebar without a horizontal scroll track.
+ * (`lang` is set on `#transcript-page` / `#sidebar-editor` by i18n.)
+ */
+#transcript-page[lang="en"] #gpa-policy-scale {
+  overflow-x: visible;
+}
+
+#transcript-page[lang="en"] #percent-letter-scale-table {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#transcript-page[lang="en"] #percent-letter-scale-table thead th,
+#transcript-page[lang="en"] #percent-letter-scale-table tbody td {
+  white-space: normal;
+}
+
+#transcript-page[lang="en"] .grade-ladder-band-td {
+  flex-wrap: wrap;
+  row-gap: 0.1em;
+}
+
+#transcript-page[lang="en"] .grade-ladder-range-solo,
+#transcript-page[lang="en"] .grade-ladder-range-with-tier,
+#transcript-page[lang="en"] .grade-ladder-tier-wrap,
+#transcript-page[lang="en"] .grade-ladder-tier-mid {
+  white-space: normal;
+}
+
+#sidebar-editor[lang="en"] .grade-rules-ref {
+  overflow-x: visible;
+}
+
+#sidebar-editor[lang="en"] .grade-rules-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#sidebar-editor[lang="en"] .grade-rules-table thead th,
+#sidebar-editor[lang="en"] .grade-rules-table tbody td {
+  white-space: normal;
+}
+
+#sidebar-editor[lang="en"] .grade-ladder-band-td {
+  flex-wrap: wrap;
+  row-gap: 0.1em;
+}
+
+#sidebar-editor[lang="en"] .grade-ladder-range-solo,
+#sidebar-editor[lang="en"] .grade-ladder-range-with-tier,
+#sidebar-editor[lang="en"] .grade-ladder-tier-wrap,
+#sidebar-editor[lang="en"] .grade-ladder-tier-mid {
+  white-space: normal;
 }
 
 #percent-letter-scale-table tbody tr:last-child td {
@@ -1192,10 +1585,51 @@ th {
   min-width: 0;
 }
 
+/* 阶梯表下方：条件显示的等级制换算说明 + 三条脚注 */
+.scale-footnotes {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e2e2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transcript-page .scale-column .scale-footnotes > .grade-scale-disclaimer {
+  margin: 0;
+}
+
+.transcript-page .scale-column .grade-scale-disclaimer {
+  margin: 6px 0 0;
+  padding: 7px 9px 7px 11px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: #2c2c2c;
+  background: #f9f7f3;
+  border-left: 3px solid #8b7355;
+  border-radius: 0 4px 4px 0;
+  box-sizing: border-box;
+}
+
+.transcript-page .scale-column .grade-scale-disclaimer__para {
+  display: block;
+  margin: 0.45em 0 0;
+}
+
+.transcript-page .scale-column .grade-scale-disclaimer__para:first-child {
+  margin-top: 0;
+}
+
+.transcript-page .scale-column .grade-scale-disclaimer em {
+  font-style: normal;
+  font-weight: 600;
+  color: #5c4033;
+}
+
 .conversion-note {
   margin-top: 6px;
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.38;
   color: #333;
 }
 
@@ -1286,7 +1720,73 @@ th {
   font-size: 12px;
 }
 
+.transcript-non-official-disclaimer {
+  margin: 8px 0 0;
+  padding: 0 10px;
+  text-align: center;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: #5a6570;
+  font-style: normal;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.autosave-restore-toast {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #143a66;
+  background: #e8f2fc;
+  border: 1px solid #b8d4ef;
+  border-radius: 8px;
+}
+
+.autosave-restore-toast[hidden] {
+  display: none !important;
+}
+
+.center-watermark-upload-timing-hint {
+  margin-top: 4px;
+}
+
+.transcript-scroll-top-btn {
+  position: fixed;
+  z-index: 999;
+  right: 20px;
+  bottom: 24px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #9aa5b5;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.transcript-scroll-top-btn:hover {
+  background: #6b7788;
+}
+
+.transcript-scroll-top-btn:focus-visible {
+  outline: 2px solid #4a6a9a;
+  outline-offset: 2px;
+}
+
+.transcript-scroll-top-btn[hidden] {
+  display: none !important;
+}
+
 @media print {
+  .transcript-scroll-top-btn {
+    display: none !important;
+  }
+
   .editor-panel {
     display: none;
   }
@@ -1514,4 +2014,511 @@ th {
   background: rgba(255, 240, 220, 0.55);
   border-left: 3px solid #b45309;
   border-radius: 2px;
+}
+
+/* --- Service consent gate, share banner, wizard, SSN hint, export receipt --- */
+.service-consent-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.service-consent-modal[hidden] {
+  display: none !important;
+}
+
+body.service-consent-open {
+  overflow: hidden;
+}
+
+body.export-preflight-open {
+  overflow: hidden;
+}
+
+.export-preflight-dialog {
+  max-width: 480px;
+}
+
+.export-preflight-body {
+  margin: 0 0 12px;
+  max-height: min(42vh, 320px);
+  overflow-y: auto;
+}
+
+.export-preflight-type-hint {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.export-preflight-phrase-sample {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  background: #f1f5f9;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.export-preflight-error {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: #991b1b;
+}
+
+.export-preflight-actions {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.export-preflight-cancel-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #e2e8f0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.export-preflight-confirm-btn {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+#transcript-page.export-raster-mode > .transcript-export-legal-raster-overlay {
+  position: absolute !important;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0.4in;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: rotate(-20deg);
+  transform-origin: center center;
+  font-weight: 800;
+  font-size: clamp(22px, 3.6vw, 44px);
+  line-height: 1.25;
+  text-align: center;
+  letter-spacing: 0.04em;
+  color: rgba(80, 80, 80, 0.28);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+.service-consent-dialog {
+  max-width: 420px;
+  width: 100%;
+  padding: 22px 24px 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.service-consent-title {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+
+.service-consent-statement {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.service-consent-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.service-consent-btn {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: #1d4ed8;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.service-consent-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.share-data-banner {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #7a2e0d;
+  background: #fff4e5;
+  border: 1px solid #f0c080;
+  border-radius: 8px;
+}
+
+.wizard-enable-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wizard-chrome {
+  margin: 0 0 10px;
+}
+
+.wizard-step-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.wizard-tab {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 11px;
+  border: 1px solid #c9d6e8;
+  border-radius: 6px;
+  background: #f6f9fc;
+  cursor: pointer;
+}
+
+.wizard-tab.is-active {
+  border-color: #1a5f9e;
+  background: #e8f2fb;
+  font-weight: 700;
+}
+
+.wizard-step-compliance {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.editor-panel.wizard-mode-on .sidebar-wizard-step--hidden {
+  display: none;
+}
+
+.field-input-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.field-input-hint--error {
+  color: #b00020;
+}
+
+.field-input-hint--muted {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #5a6478;
+}
+
+.editor-field--date-issued-auto input[readonly],
+.editor-field--issue-signature-auto input[readonly],
+.editor-field--cert-institution-auto input[readonly] {
+  background: #f4f5f7;
+  color: #2d3748;
+  cursor: default;
+}
+
+/* Issue / hash cert line: export-generated only (no inline manual edit on the transcript). */
+#transcript-page p[data-issue-signature-auto="true"] .inline-edit-target {
+  user-select: none;
+  cursor: default;
+}
+
+/* Institution + address line: sidebar-driven only (same interaction model as issue/signature line). */
+#transcript-page p[data-cert-institution-auto="true"] .inline-edit-target {
+  user-select: none;
+  cursor: default;
+}
+
+.personal-ssn-sensitive-hint {
+  margin-top: 2px;
+}
+
+.export-receipt-panel {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #bfd0e8;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.export-receipt-body {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+  color: #1d3f63;
+  word-break: break-all;
+}
+
+/* html2canvas clone only: added in script `onclone` — never on the live page. */
+#transcript-page.export-raster-mode {
+  overflow: visible !important;
+  box-shadow: none !important;
+  width: 9.9in !important;
+  min-width: 9.9in !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Author-only: course filter lives inside #transcript-page but must not appear on PNG/PDF raster. */
+#transcript-page.export-raster-mode #course-filter-bar {
+  display: none !important;
+}
+
+#transcript-page.export-raster-mode .term-block,
+#transcript-page.export-raster-mode .student-box,
+#transcript-page.export-raster-mode .cumulative-box,
+#transcript-page.export-raster-mode .certification,
+#transcript-page.export-raster-mode .bottom-row,
+#transcript-page.export-raster-mode .security-audit,
+#transcript-page.export-raster-mode section.perimeter-warning,
+#transcript-page.export-raster-mode .header {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+#transcript-page.export-raster-mode .term-block > table {
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: fixed !important;
+}
+
+#transcript-page.export-raster-mode .bottom-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+
+#transcript-page.export-raster-mode .bottom-row > .scale-column {
+  flex: 2 1 40% !important;
+  min-width: 2.75in !important;
+  max-width: none !important;
+}
+
+#transcript-page.export-raster-mode #gpa-policy-scale {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+#transcript-page.export-raster-mode .authorization-area {
+  flex: 3 1 40% !important;
+  min-width: 2.5in !important;
+  max-width: none !important;
+}
+
+#transcript-page.export-raster-mode .security-audit a {
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+#transcript-page.export-raster-mode .totals-row,
+#transcript-page.export-raster-mode .totals-row.final {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+#transcript-page.export-raster-mode .watermark-stack {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+  contain: paint !important;
+}
+
+#transcript-page.export-raster-mode .watermark-stack--rot180 {
+  transform: rotate(180deg) !important;
+  transform-origin: center center !important;
+}
+
+#transcript-page.export-raster-mode .watermark-stack .watermark-layer {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  transform: translate(-50%, -50%) rotate(-5deg) !important;
+  transform-origin: center center !important;
+  color: rgba(145, 10, 10, 0.15) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.65 !important;
+  padding: 2in !important;
+  white-space: pre-wrap !important;
+  text-align: center !important;
+  overflow: hidden !important;
+}
+
+#transcript-page.export-raster-mode .authorization-watermark {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 155% !important;
+  max-width: none !important;
+  transform: translate(-50%, -50%) rotate(-14deg) !important;
+  transform-origin: center center !important;
+  opacity: 0.18 !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.88 !important;
+  letter-spacing: 0.05em !important;
+  color: #e8a4b8 !important;
+  text-align: center !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  z-index: 0 !important;
+}
+
+#transcript-page.export-raster-mode.export-raster--png .term-block thead th,
+#transcript-page.export-raster-mode.export-raster--png .term-block tbody td {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+#transcript-page.export-raster-mode.export-raster--png .term-block .grade-percent-display,
+#transcript-page.export-raster-mode.export-raster--png .term-block tbody td.num {
+  white-space: nowrap !important;
+}
+
+#transcript-page.export-raster-mode.export-raster--png #percent-letter-scale-table th,
+#transcript-page.export-raster-mode.export-raster--png #percent-letter-scale-table td {
+  white-space: normal !important;
+  word-break: normal !important;
+}
+
+.editor-field-input-error {
+  border-color: #c62828 !important;
+  box-shadow: 0 0 0 1px rgba(198, 40, 40, 0.25);
+}
+
+.editor-field-error-msg {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #a32020;
+}
+
+.term-block tbody tr.course-filter-dimmed {
+  opacity: 0.38;
+}
+
+.term-block tbody tr.course-filter-match {
+  outline: 2px solid rgba(90, 132, 189, 0.55);
+  outline-offset: -2px;
+}
+
+.sidebar-open-toggle {
+  display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .sidebar-open-toggle {
+    display: flex;
+    position: fixed;
+    right: 12px;
+    bottom: 52px;
+    z-index: 1200;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid #b8c9df;
+    background: #eef3f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    color: #2a4a6e;
+  }
+
+  .layout-root.sidebar-overlay-open .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1190;
+    background: rgba(0, 0, 0, 0.28);
+  }
+
+  .layout-root.sidebar-overlay-open .editor-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(100vw, 380px);
+    max-width: 100%;
+    z-index: 1195;
+    overflow: auto;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
+    transform: translateX(0);
+  }
+
+  .layout-root:not(.sidebar-overlay-open) .editor-panel {
+    transform: translateX(100%);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .layout-root:not(.sidebar-overlay-open) .editor-panel * {
+    pointer-events: none;
+  }
+
+  .layout-root.sidebar-overlay-open .editor-panel,
+  .layout-root.sidebar-overlay-open .editor-panel * {
+    pointer-events: auto;
+    visibility: visible;
+  }
 }

@@ -13,9 +13,48 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="page-wrap">
-    <aside class="editor-panel" lang="en">
+  <div id="service-consent-modal" class="service-consent-modal" role="dialog" aria-modal="true" aria-labelledby="service-consent-title" hidden>
+    <div class="service-consent-dialog">
+      <h2 id="service-consent-title" class="service-consent-title"></h2>
+      <p id="service-consent-statement" class="service-consent-statement"></p>
+      <input type="text" id="consent-name-input" class="service-consent-input" autocomplete="off" maxlength="120" />
+      <button type="button" id="consent-start-btn" class="service-consent-btn" disabled></button>
+    </div>
+  </div>
+  <div id="export-preflight-modal" class="service-consent-modal export-preflight-modal" role="dialog" aria-modal="true" aria-labelledby="export-preflight-title" hidden>
+    <div class="service-consent-dialog export-preflight-dialog">
+      <h2 id="export-preflight-title" class="service-consent-title"></h2>
+      <div id="export-preflight-body" class="export-preflight-body"></div>
+      <p id="export-preflight-type-hint" class="export-preflight-type-hint"></p>
+      <pre id="export-preflight-phrase-sample" class="export-preflight-phrase-sample" aria-live="polite"></pre>
+      <input type="text" id="export-preflight-phrase-input" class="service-consent-input export-preflight-phrase-input" autocomplete="off" spellcheck="false" />
+      <p id="export-preflight-error" class="export-preflight-error" role="alert" hidden></p>
+      <div class="export-preflight-actions">
+        <button type="button" id="export-preflight-cancel" class="export-preflight-cancel-btn"></button>
+        <button type="button" id="export-preflight-confirm" class="service-consent-btn export-preflight-confirm-btn" disabled></button>
+      </div>
+    </div>
+  </div>
+  <main class="page-wrap layout-root">
+    <button type="button" id="sidebar-open-toggle" class="sidebar-open-toggle" aria-controls="sidebar-editor" aria-expanded="false">☰</button>
+    <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+    <aside class="editor-panel" id="sidebar-editor" lang="en">
+      <div id="autosave-restore-toast" class="autosave-restore-toast" role="status" hidden></div>
+      <div id="editor-generic-toast" class="autosave-restore-toast" role="status" hidden></div>
       <h2>For authors</h2>
+      <p id="share-data-banner" class="share-data-banner" hidden role="status"></p>
+      <div id="wizard-chrome" class="wizard-chrome" hidden>
+        <div class="wizard-step-tabs" role="tablist" aria-label="Sidebar steps">
+          <button type="button" class="wizard-tab is-active" id="wizard-tab-1" data-wizard-step="1" role="tab" aria-selected="true">① Identity</button>
+          <button type="button" class="wizard-tab" id="wizard-tab-2" data-wizard-step="2" role="tab" aria-selected="false">② Courses</button>
+          <button type="button" class="wizard-tab" id="wizard-tab-3" data-wizard-step="3" role="tab" aria-selected="false">③ Preview &amp; export</button>
+        </div>
+        <p id="wizard-step-compliance" class="wizard-step-compliance" role="note"></p>
+      </div>
+      <label class="wizard-enable-row toolbox">
+        <input type="checkbox" id="wizard-mode-toggle" aria-controls="wizard-chrome">
+        <span id="wizard-mode-label-text">Step-by-step wizard</span>
+      </label>
       <p class="sidebar-intro-lead">Edits on the left update the transcript in real time. Recommended order: media and identifiers, courses and terms, then export.</p>
       <div class="sidebar-purpose-note" lang="en">
         <p><strong>Scope.</strong> English layout and GPA arithmetic only. Does not substitute registrar, CHSI, or reviewer determinations on authenticity.</p>
@@ -44,7 +83,7 @@
         </div>
         <div class="toolbox privacy-preview-toolbox">
           <label class="ack-line privacy-preview-toggle-label">
-            <input id="privacy-preview-toggle" type="checkbox">
+            <input id="privacy-preview-toggle" type="checkbox" checked>
             <span>Blur preview (shared spaces)</span>
           </label>
           <p class="privacy-preview-hint">
@@ -58,6 +97,7 @@
           </p>
         </div>
       </details>
+      <div id="sidebar-wizard-step-1" class="sidebar-wizard-step" data-wizard-step="1">
       <div class="toolbox">
         <label class="tool-label" for="lang-select">Language / 语言</label>
         <select id="lang-select" aria-label="Display language">
@@ -68,10 +108,12 @@
       <div class="toolbox">
         <label class="tool-label" for="logo-upload">Institution Logo</label>
         <input id="logo-upload" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.tif,.tiff,.heic,.heif,image/*">
+        <p id="logo-upload-timing-hint" class="field-input-hint field-input-hint--muted logo-upload-timing-hint" lang="en"></p>
       </div>
       <div class="toolbox">
         <label class="tool-label" for="center-watermark-upload">Institution Emblem Watermark (Center)</label>
         <input id="center-watermark-upload" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.tif,.tiff,.heic,.heif,image/*">
+        <p id="center-watermark-upload-timing-hint" class="field-input-hint field-input-hint--muted center-watermark-upload-timing-hint" lang="en"></p>
       </div>
       <div class="toolbox">
         <label class="tool-label" for="photo-upload">Student Photo</label>
@@ -80,6 +122,7 @@
       <div class="toolbox personal-ssn-toolbox">
         <label class="tool-label" for="personal-ssn-input">Government ID (18-digit)</label>
         <input id="personal-ssn-input" class="notranslate" translate="no" type="text" maxlength="18" title="Digits only, max 18; layout placeholder and local hash watermark" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" aria-label="Up to 18 digits for layout placeholder and local hash watermark">
+        <p id="personal-ssn-sensitive-hint" class="field-input-hint field-input-hint--error personal-ssn-sensitive-hint" hidden></p>
       </div>
       <div class="toolbox chsi-verify-toolbox">
         <label class="tool-label" for="chsi-verify-code-input">CHSI online verification code</label>
@@ -90,14 +133,20 @@
           <p><strong>Submission.</strong> When rules permit, include CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> so reviewers can match code to report.</p>
         </div>
       </div>
-      <div class="toolbox">
-        <label class="tool-label" for="term-select">Course rows</label>
+      </div>
+      <div id="sidebar-wizard-step-2" class="sidebar-wizard-step" data-wizard-step="2">
+      <div class="toolbox" role="group" aria-labelledby="sidebar-label-course-rows">
+        <label class="tool-label" id="sidebar-label-course-rows" for="term-select">Course rows</label>
         <select id="term-select">
           <option value="0">Term 1 (Fall 2024)</option>
           <option value="1">Term 2 (Spring 2025)</option>
         </select>
+        <label class="tool-label" for="duplicate-row-pick" id="duplicate-row-pick-label"></label>
+        <select id="duplicate-row-pick" aria-describedby="duplicate-row-hint"></select>
+        <p id="duplicate-row-hint" class="field-input-hint field-input-hint--muted"></p>
         <div class="tool-buttons">
           <button type="button" id="add-course-row">Add Row</button>
+          <button type="button" id="duplicate-course-row">Duplicate Row</button>
           <button type="button" id="remove-course-row">Remove Last Row</button>
         </div>
         <div class="excel-import-block">
@@ -110,8 +159,8 @@
           <p class="import-disclaimer" role="note"></p>
         </div>
       </div>
-      <div class="toolbox">
-        <label class="tool-label" for="term-layout-mode">Terms on transcript</label>
+      <div class="toolbox" role="group" aria-labelledby="sidebar-label-term-layout">
+        <label class="tool-label" id="sidebar-label-term-layout" for="term-layout-mode">Terms on transcript</label>
         <select id="term-layout-mode">
           <option value="two" selected>Two terms</option>
           <option value="one">Single term (e.g. first-year, one semester)</option>
@@ -124,24 +173,24 @@
         <label class="tool-label">GPA ladder (auto-recalculation)</label>
 
         <div class="grade-rules-ref-body">
-          <section class="grade-rules-card">
-            <h4 class="grade-rules-card-title">GPA inputs</h4>
+          <section class="grade-rules-card" role="region" aria-labelledby="grade-rules-card-gpa-title">
+            <h4 class="grade-rules-card-title" id="grade-rules-card-gpa-title">GPA inputs</h4>
             <p class="grade-rules-card-text">Only <strong>Percent</strong> and <strong>Credits</strong> enter the GPA calculation. Edits update <strong>Grade Pt</strong>, <strong>Grade</strong>, and <strong>Quality Pts</strong> per the ladder (quality pts = grade pt × credits earned).</p>
           </section>
-          <section class="grade-rules-card">
-            <h4 class="grade-rules-card-title">Non-calculated columns</h4>
+          <section class="grade-rules-card" role="region" aria-labelledby="grade-rules-card-noncalc-title">
+            <h4 class="grade-rules-card-title" id="grade-rules-card-noncalc-title">Non-calculated columns</h4>
             <p class="grade-rules-card-text"><strong>Course Type / Course Number / Description</strong> are descriptive only and excluded from formulas.</p>
           </section>
-          <section class="grade-rules-card">
-            <h4 class="grade-rules-card-title">Per term</h4>
+          <section class="grade-rules-card" role="region" aria-labelledby="grade-rules-card-per-title">
+            <h4 class="grade-rules-card-title" id="grade-rules-card-per-title">Per term</h4>
             <ul class="grade-rules-list">
               <li><strong>Attempted / Earned / GPA Hours</strong> = sum of credits earned (identical here).</li>
               <li><strong>Quality Points</strong> = sum of row <strong>Quality Pts</strong>.</li>
               <li><strong>Term GPA</strong> = Quality Points ÷ GPA Hours.</li>
             </ul>
           </section>
-          <section class="grade-rules-card">
-            <h4 class="grade-rules-card-title">Cumulative</h4>
+          <section class="grade-rules-card" role="region" aria-labelledby="grade-rules-card-cum-title">
+            <h4 class="grade-rules-card-title" id="grade-rules-card-cum-title">Cumulative</h4>
             <ul class="grade-rules-list">
               <li>Carry term totals forward in semester order.</li>
               <li><strong>Cumulative GPA</strong> = cumulative Quality Points ÷ cumulative GPA Hours.</li>
@@ -152,12 +201,13 @@
         <p class="grade-rules-table-caption">Matches transcript footer ladder</p>
         <table class="grade-rules-table">
           <thead>
-            <tr><th>Percent band</th><th>Letter</th><th>Grade Point</th></tr>
+            <tr><th>Percent band · CN tier ref</th><th>Ladder grade</th><th>Grade Point</th></tr>
           </thead>
           <tbody id="grade-ladder-sidebar-tbody"></tbody>
         </table>
       </div>
-      <div class="toolbox">
+      <div class="toolbox toolbox-term-settings" role="group" aria-labelledby="sidebar-section-term-title">
+        <div class="toolbox-section-title" id="sidebar-section-term-title" role="heading" aria-level="3">Term order &amp; calendar years</div>
         <label class="tool-label" for="term-order">Term Season Order</label>
         <select id="term-order">
           <option value="fall-spring" selected>Fall then Spring</option>
@@ -168,10 +218,46 @@
         <label class="tool-label" for="term-year-2">Year for Term 2</label>
         <input id="term-year-2" type="number" min="2000" max="2100" step="1">
       </div>
+      <div class="toolbox toolbox-domestic-gpa-settings">
+        <div class="toolbox-section-title" id="sidebar-section-domestic-title" role="heading" aria-level="3">Actual domestic GPA</div>
+        <div class="toolbox-section-lead" id="sidebar-section-domestic-lead">
+          Optional: your institution’s per-term GPA for side-by-side display on the transcript. Does not change course-level ladder math.
+        </div>
+        <label class="tool-label" id="domestic-term-gpa-1-label" for="domestic-term-gpa-1">Term 1 — domestic semester total (optional)</label>
+        <input id="domestic-term-gpa-1" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" lang="en" value="" placeholder="X.xx">
+        <label class="tool-label" id="domestic-term-gpa-2-label" for="domestic-term-gpa-2">Term 2 — domestic semester total (optional)</label>
+        <input id="domestic-term-gpa-2" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" lang="en" value="" placeholder="X.xx">
+        <p class="domestic-gpa-sidebar-note" id="domestic-gpa-sidebar-note"></p>
+      </div>
+      </div>
+      <div id="sidebar-wizard-step-3" class="sidebar-wizard-step" data-wizard-step="3">
       <div class="toolbox">
-        <label class="tool-label">Finalize and export</label>
+        <label id="sidebar-finalize-heading" class="tool-label">Finalize and export</label>
+        <div class="toolbox toolbox-undo-row">
+          <span class="tool-label" id="sidebar-undo-redo-label"></span>
+          <div class="tool-buttons">
+            <button type="button" id="editor-undo-btn" disabled>Undo</button>
+            <button type="button" id="editor-redo-btn" disabled>Redo</button>
+            <button type="button" id="manual-autosave-btn">Save now</button>
+          </div>
+        </div>
         <button type="button" id="regen-doc-id">Regenerate Document ID</button>
         <button type="button" id="export-png">Export Transcript as PNG</button>
+        <label class="tool-label" for="export-pdf-layout">PDF page (A3)</label>
+        <select id="export-pdf-layout" aria-describedby="export-pdf-layout-hint">
+          <option value="a3-portrait" selected>A3 portrait — one sheet, scale to fit</option>
+          <option value="a3-landscape">A3 landscape — one sheet, scale to fit</option>
+        </select>
+        <p id="export-pdf-layout-hint" class="export-pdf-layout-hint">
+          Transcript PDF and GPA discrepancy PDF use this layout: entire capture on <strong>one A3 page</strong> with uniform scaling (nothing cropped; very long content may appear smaller).
+        </p>
+        <button type="button" id="export-transcript-pdf">Export transcript as PDF (A3)</button>
+        <button type="button" id="export-gpa-discrepancy-report">
+          Export GPA discrepancy report (PDF)
+        </button>
+        <label class="tool-label" for="export-purpose-input">Export purpose (optional)</label>
+        <input id="export-purpose-input" type="text" maxlength="200" autocomplete="off" spellcheck="false" placeholder="e.g. graduate school application materials">
+        <button type="button" id="export-transparency-report">Export transparency report (PDF)</button>
         <label class="ack-line">
           <input id="legal-ack" type="checkbox">
           <span lang="en">I acknowledge legal responsibility for authenticity and lawful use, and I will not use exports to falsely claim eligibility for merchant or education-pricing programmes.</span>
@@ -181,6 +267,16 @@
         </p>
         <p id="ack-status" class="ack-status">Legal acknowledgment: Pending</p>
         <p id="export-status" class="verify-result">Export: Ready</p>
+        <div id="export-receipt-panel" class="export-receipt-panel" hidden>
+          <p id="export-receipt-body" class="export-receipt-body"></p>
+          <button type="button" id="export-receipt-close" class="export-receipt-close">Dismiss receipt</button>
+        </div>
+        <button type="button" id="generate-share-link">Copy share link</button>
+        <button type="button" id="export-project-json">Save project (.json)</button>
+        <input type="file" id="import-project-json-input" accept="application/json,.json" hidden>
+        <button type="button" id="import-project-json-btn">Load project (.json)</button>
+        <button type="button" id="export-reviewer-guide-pdf">Export reviewer verification guide (PDF)</button>
+        <button type="button" id="reset-all-data">Reset all data</button>
       </div>
       <div class="toolbox upload-diagnostics-box">
         <label class="tool-label">Upload status</label>
@@ -194,12 +290,18 @@
           <p><strong>UTC detail.</strong> Parallel public sources, <strong>first success</strong>; if all fail, labeled <strong>browser UTC</strong>. Reconcile on local timestamps + content hash (not a substitute for issuer records).</p>
           <p><strong>Print cues.</strong> Microprint, watermark, VOID tiling—visual screening only; official stock and seals follow the issuer.</p>
           <p><strong>QR.</strong> Export-bound snapshot (sidebar fields, transcript HTML digest, compliance log refs)—file ↔ export pairing; <strong>supplementary</strong> to CHSI/registrar checks only. Blank QR area: see below.</p>
+          <p class="domestic-gpa-editor-audit-note" id="domestic-gpa-editor-audit-note"></p>
           <div id="export-qr-fallback-wrap" class="export-qr-fallback-wrap" hidden>
             <p id="export-qr-fallback-lib" class="export-qr-fallback-note export-qr-fallback-lib-note" lang="en" hidden><strong>QR library missing:</strong> place <code>qrcode.min.js</code> (not qrious) next to <code>index.html</code> and open via HTTP (not <code>file://</code>).</p>
             <p id="export-qr-fallback-render" class="export-qr-fallback-note export-qr-fallback-render-note" lang="en" hidden><strong>QR render blocked:</strong> tracking protection or strict canvas policies may prevent drawing. Try relaxing protections for this origin, allowlisting the site, or serving from <code>127.0.0.1</code> / <code>localhost</code>.</p>
+            <p id="export-qr-fallback-file" class="export-qr-fallback-note export-qr-fallback-file-note" lang="en" hidden></p>
           </div>
         </div>
       </details>
+      </div>
+      <div class="toolbox">
+        <button type="button" id="system-self-check">System self-check</button>
+      </div>
       <form id="editor-form"></form>
     </aside>
 
@@ -230,35 +332,37 @@
         </div>
         <div class="school-meta centered">
           <h1 data-edit-label="Institution Name"><span class="inline-edit-target">Example University</span></h1>
-          <p data-edit-label="Issuing Office"><span class="inline-edit-target">Office of the University Registrar</span></p>
+          <p data-edit-label="Issuing Office"><span class="inline-edit-target">Office of Academic Affairs and Student Development</span></p>
           <p data-edit-label="Document Title"><span class="inline-edit-target">Academic Transcript</span></p>
-          <p class="institution-address" data-edit-label="Institution Address"><span class="inline-edit-target">123 Example Street, Example City, EX 00000, USA</span></p>
+          <p class="institution-address" data-edit-label="Institution Address"><span class="inline-edit-target">123 University Way, College Town, CA 90210, United States</span></p>
         </div>
         <div class="header-spacer" aria-hidden="true"></div>
       </header>
 
-      <section class="perimeter-warning notranslate" id="perimeter-warning" translate="no" data-edit-label="Perimeter Warning" data-protected="true">
-        WARNING: SECURITY PAPER BACKGROUND - VOID IF ALTERED OR REPRODUCED WITHOUT AUTHORIZATION
-      </section>
+      <section class="perimeter-warning notranslate" id="perimeter-warning" translate="no" data-edit-label="Perimeter Warning" data-protected="true"></section>
 
       <section class="security-audit notranslate" translate="no">
-        <p><strong>Document ID:</strong> <span id="document-id">Pending</span></p>
+        <p data-metadata-protected="true"><strong>Document ID:</strong> <span id="document-id">Pending</span></p>
 
         <div class="security-audit-subsection security-audit-chsi">
           <p><strong>CHSI verification (reviewers)</strong></p>
           <p>For PRC credentials, identity and enrollment status are established by <a href="https://www.chsi.com.cn/" target="_blank" rel="noopener noreferrer">CHSI</a>; this sheet is user layout only.</p>
           <p class="audit-inline-note"><strong>Verification:</strong> CHSI <em>Online Verification</em> + code below. CHSI prevails over this layout.</p>
           <p class="chsi-verify-line-transcript"><strong>CHSI online verification code:</strong> <code id="chsi-verify-code-display" class="chsi-verify-code-display">SAMPLE_CODE_DO_NOT_VERIFY</code></p>
+          <p class="audit-inline-note" id="chsi-bgcx-url-line-transcript"></p>
           <p class="audit-inline-note"><strong>Submission:</strong> Where policy allows, pair with CHSI&rsquo;s <cite>Online Verification Report of Student Record</cite> for side-by-side review.</p>
         </div>
 
-        <p><strong>Integrity check (SHA-256):</strong> <span id="integrity-hash">Pending</span></p>
-        <p><strong>Last exported PNG digest:</strong> <span id="export-file-hash">Pending</span></p>
+        <p class="audit-inline-note domestic-gpa-transcript-audit" id="domestic-gpa-transcript-audit"></p>
+
+        <p data-metadata-protected="true"><strong>Integrity check (SHA-256):</strong> <span id="integrity-hash">Pending</span></p>
+        <p data-metadata-protected="true"><strong>Last exported PNG digest:</strong> <span id="export-file-hash">Pending</span></p>
         <p class="audit-inline-note"><strong>Content hash (reconciliation):</strong> Truncated SHA-256 of editable content at the timestamps below—cross-check copies or internal files; <strong>not</strong> registrar- or CHSI-issued.</p>
-        <p class="audit-time-line"><strong>Layout fingerprint updated (local time):</strong> <span id="transcript-last-edited-display">—</span></p>
-        <p class="audit-time-line"><strong>PNG export snapshot queued (local time):</strong> <span id="transcript-export-snapshot-display">—</span></p>
+        <p class="audit-time-line" data-metadata-protected="true"><strong>Layout fingerprint updated (local time):</strong> <span id="transcript-last-edited-display">—</span></p>
+        <p class="audit-time-line" data-metadata-protected="true"><strong>PNG export snapshot queued (local time):</strong> <span id="transcript-export-snapshot-display">—</span></p>
         <p class="audit-time-line"><strong>Export reference time (UTC, public time service):</strong> <span id="trusted-timestamp">Not yet fetched</span></p>
         <p id="transcript-utc-inline-note" class="audit-inline-note"><strong>UTC reference:</strong> Taken at export from public NTP-style sources (first success). <strong>Not</strong> legal/institutional time attestation; if all fail, <strong>browser UTC</strong> is labeled. Reconcile on local timestamps + hash.</p>
+        <p id="export-purpose-statement" class="audit-inline-note export-purpose-statement" hidden translate="yes"></p>
 
         <div class="security-audit-subsection security-audit-physical-layer">
           <p><strong>Layout anti-tamper (visual)</strong></p>
@@ -285,18 +389,29 @@
           <div class="info-column">
             <p data-edit-label="Student Name"><strong>Name:</strong> <span data-pii-mask data-pii-key="studentName">John Doe</span></p>
             <p data-edit-label="Student ID"><strong>Student ID:</strong> <span data-pii-mask data-pii-key="studentId">000-00-0000</span></p>
-            <p data-edit-label="Date of Birth"><strong>Date of Birth:</strong> <span data-pii-mask data-pii-key="dateOfBirth">01/01/2000</span></p>
-            <p data-edit-label="Date Issued"><strong>Date Issued:</strong> <span data-pii-mask data-pii-key="dateIssued">01/02/2000</span></p>
+            <p data-edit-label="Date of Birth"><strong>Date of Birth:</strong> <span data-pii-mask data-pii-key="dateOfBirth">2000-01-01</span></p>
+            <p data-edit-label="Date Issued" data-date-issued-auto="true"><strong>Date Issued:</strong> <span data-pii-mask data-pii-key="dateIssued">2000-01-01</span></p>
           </div>
           <div class="info-column">
-            <p data-edit-label="Program"><strong>Program:</strong> <span data-pii-mask data-pii-key="program">Example Program</span></p>
-            <p data-edit-label="College"><strong>College:</strong> <span data-pii-mask data-pii-key="college">Example College</span></p>
-            <p data-edit-label="Major"><strong>Major:</strong> <span data-pii-mask data-pii-key="major">Example Major</span></p>
+            <p data-edit-label="Type of Education"><strong>Type of Education:</strong> <span data-pii-mask data-pii-key="program">Regular Higher Education (3-year Full-time)</span></p>
+            <p data-edit-label="College"><strong>College:</strong> <span data-pii-mask data-pii-key="college">Example College / School</span></p>
+            <p data-edit-label="Major"><strong>Major:</strong> <span data-pii-mask data-pii-key="major">Applied Chemical Technology</span></p>
+            <p data-edit-label="Academic System"><strong>Duration of Study:</strong> <span data-pii-mask data-pii-key="academicSystem">Three-year program (example)</span></p>
+          </div>
+          <div class="info-column info-column--student-contact">
             <p data-edit-label="Citizenship"><strong>Citizenship:</strong> <span data-pii-mask data-pii-key="citizenship">Example Country</span></p>
+            <p data-edit-label="Student Email"><strong>Student Email:</strong> <span data-pii-mask data-pii-key="studentEmail">student.name@university.example.edu</span></p>
           </div>
         </div>
       </section>
 
+      <div class="course-filter-bar" id="course-filter-bar">
+        <label class="course-filter-label tool-label" for="course-filter-input" id="course-filter-label">Filter courses</label>
+        <input type="search" id="course-filter-input" class="course-filter-input" maxlength="120" autocomplete="off" spellcheck="false" placeholder="">
+        <button type="button" id="course-filter-clear" class="course-filter-clear">Clear</button>
+      </div>
+
+      <!-- Row reorder ▲/▼: sidebar “Description” (course name) field, inside input row (see script.js). -->
       <section class="term-block" data-semester-kind="fall" data-term="Fall 2024">
         <h2 data-edit-label="Term Title 1"><span class="inline-edit-target">Fall 2024</span></h2>
         <table>
@@ -312,41 +427,41 @@
           </colgroup>
           <thead>
             <tr>
-              <th>Course Type</th>
-              <th>Course Number</th>
-              <th>Description</th>
-              <th class="th-percent">Percent</th>
-              <th>Grade Pt</th>
-              <th>Grade</th>
-              <th>Credits</th>
-              <th>Quality Pts</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="0">Course Type</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="1">Course Number</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="2">Description</th>
+              <th class="th-percent" data-i18n-key="courseHead" data-i18n-idx="3">Percent</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="4">Grade Pt</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="5">Grade</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="6">Credits</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="7">Quality Pts</th>
             </tr>
           </thead>
           <tbody>
-            <tr data-hours="4" data-quality="16">
-              <td>CS</td><td>1428</td><td>Foundations of Computer Science I</td><td class="num">96</td><td class="num">4.0</td><td>A</td><td class="num">4.00</td><td class="num">16.00</td>
+            <tr data-hours="4" data-quality="16" data-grade-scale="percent" data-grade-value="96">
+              <td>CS</td><td>1428</td><td>Foundations of Computer Science I</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">96</span></td><td class="num">4.0</td><td>A</td><td class="num">4.00</td><td class="num">16.00</td>
             </tr>
-            <tr data-hours="3" data-quality="12">
-              <td>MATH</td><td>2358</td><td>Discrete Mathematics I</td><td class="num">94</td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
+            <tr data-hours="3" data-quality="12" data-grade-scale="percent" data-grade-value="94">
+              <td>MATH</td><td>2358</td><td>Discrete Mathematics I</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">94</span></td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
             </tr>
-            <tr data-hours="3" data-quality="9">
-              <td>CS</td><td>2308</td><td>Foundations of Computer Science II</td><td class="num">86</td><td class="num">3.0</td><td>B</td><td class="num">3.00</td><td class="num">9.00</td>
+            <tr data-hours="3" data-quality="9" data-grade-scale="percent" data-grade-value="86">
+              <td>CS</td><td>2308</td><td>Foundations of Computer Science II</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">86</span></td><td class="num">3.0</td><td>B</td><td class="num">3.00</td><td class="num">9.00</td>
             </tr>
-            <tr data-hours="3" data-quality="12">
-              <td>ENG</td><td>1320</td><td>College Writing II</td><td class="num">90</td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
+            <tr data-hours="3" data-quality="12" data-grade-scale="percent" data-grade-value="90">
+              <td>ENG</td><td>1320</td><td>College Writing II</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">90</span></td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
             </tr>
-            <tr data-hours="3" data-quality="12">
-              <td>COMM</td><td>1310</td><td>Fund. of Human Communication</td><td class="num">92</td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
+            <tr data-hours="3" data-quality="12" data-grade-scale="percent" data-grade-value="92">
+              <td>COMM</td><td>1310</td><td>Fund. of Human Communication</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">92</span></td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
             </tr>
           </tbody>
         </table>
         <div class="totals-row">
-          <span><strong>Term Totals</strong></span>
-          <span>Attempted: <strong class="attempted">0.00</strong></span>
-          <span>Earned: <strong class="earned">0.00</strong></span>
-          <span>GPA Hours: <strong class="gpa-hours">0.00</strong></span>
-          <span>Quality Points: <strong class="quality">0.00</strong></span>
-          <span>Term GPA: <strong class="term-gpa">0.00</strong></span>
+          <span><strong data-i18n-key="termTotalsTitle">Term Totals</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineAttempted"></span><strong class="attempted">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineEarned"></span><strong class="earned">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineGpaHours"></span><strong class="gpa-hours">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineQuality"></span><strong class="quality">0.00</strong></span>
+          <span><span class="totals-line-label totals-line-label--inline" data-i18n-key="lineTermGpa"></span><span class="term-gpa-value-line"><strong class="term-gpa-domestic" style="display:none">—</strong><span class="term-gpa-sep" style="display:none"> / </span><strong class="term-gpa">0.00</strong></span></span>
         </div>
       </section>
 
@@ -365,65 +480,65 @@
           </colgroup>
           <thead>
             <tr>
-              <th>Course Type</th>
-              <th>Course Number</th>
-              <th>Description</th>
-              <th class="th-percent">Percent</th>
-              <th>Grade Pt</th>
-              <th>Grade</th>
-              <th>Credits</th>
-              <th>Quality Pts</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="0">Course Type</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="1">Course Number</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="2">Description</th>
+              <th class="th-percent" data-i18n-key="courseHead" data-i18n-idx="3">Percent</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="4">Grade Pt</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="5">Grade</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="6">Credits</th>
+              <th data-i18n-key="courseHead" data-i18n-idx="7">Quality Pts</th>
             </tr>
           </thead>
           <tbody>
-            <tr data-hours="3" data-quality="9">
-              <td>MATH</td><td>2358</td><td>Discrete Mathematics I</td><td class="num">82</td><td class="num">2.7</td><td>B-</td><td class="num">3.00</td><td class="num">8.10</td>
+            <tr data-hours="3" data-quality="9" data-grade-scale="percent" data-grade-value="82">
+              <td>MATH</td><td>2358</td><td>Discrete Mathematics I</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">82</span></td><td class="num">2.7</td><td>B-</td><td class="num">3.00</td><td class="num">8.10</td>
             </tr>
-            <tr data-hours="4" data-quality="12">
-              <td>CS</td><td>1428</td><td>Foundations of Computer Science I</td><td class="num">84</td><td class="num">3.0</td><td>B</td><td class="num">4.00</td><td class="num">12.00</td>
+            <tr data-hours="4" data-quality="12" data-grade-scale="percent" data-grade-value="84">
+              <td>CS</td><td>1428</td><td>Foundations of Computer Science I</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">84</span></td><td class="num">3.0</td><td>B</td><td class="num">4.00</td><td class="num">12.00</td>
             </tr>
-            <tr data-hours="3" data-quality="12">
-              <td>HIST</td><td>1310</td><td>History of US to 1877</td><td class="num">91</td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
+            <tr data-hours="3" data-quality="12" data-grade-scale="percent" data-grade-value="91">
+              <td>HIST</td><td>1310</td><td>History of US to 1877</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">91</span></td><td class="num">3.7</td><td>A-</td><td class="num">3.00</td><td class="num">11.10</td>
             </tr>
-            <tr data-hours="3" data-quality="12">
-              <td>ART</td><td>2313</td><td>Introduction to Fine Arts</td><td class="num">95</td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
+            <tr data-hours="3" data-quality="12" data-grade-scale="percent" data-grade-value="95">
+              <td>ART</td><td>2313</td><td>Introduction to Fine Arts</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">95</span></td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
             </tr>
-            <tr data-hours="3" data-quality="12">
-              <td>ENG</td><td>1310</td><td>College Writing I</td><td class="num">93</td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
+            <tr data-hours="3" data-quality="12" data-grade-scale="percent" data-grade-value="93">
+              <td>ENG</td><td>1310</td><td>College Writing I</td><td class="num grade-percent-cell notranslate" translate="no"><span class="grade-percent-display notranslate" translate="no">93</span></td><td class="num">4.0</td><td>A</td><td class="num">3.00</td><td class="num">12.00</td>
             </tr>
           </tbody>
         </table>
         <div class="totals-row">
-          <span><strong>Term Totals</strong></span>
-          <span>Attempted: <strong class="attempted">0.00</strong></span>
-          <span>Earned: <strong class="earned">0.00</strong></span>
-          <span>GPA Hours: <strong class="gpa-hours">0.00</strong></span>
-          <span>Quality Points: <strong class="quality">0.00</strong></span>
-          <span>Term GPA: <strong class="term-gpa">0.00</strong></span>
+          <span><strong data-i18n-key="termTotalsTitle">Term Totals</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineAttempted"></span><strong class="attempted">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineEarned"></span><strong class="earned">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineGpaHours"></span><strong class="gpa-hours">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineQuality"></span><strong class="quality">0.00</strong></span>
+          <span><span class="totals-line-label totals-line-label--inline" data-i18n-key="lineTermGpa"></span><span class="term-gpa-value-line"><strong class="term-gpa-domestic" style="display:none">—</strong><span class="term-gpa-sep" style="display:none"> / </span><strong class="term-gpa">0.00</strong></span></span>
         </div>
       </section>
 
       <section class="cumulative-box">
         <div class="totals-row final">
-          <span><strong>Cumulative Totals</strong></span>
-          <span>Attempted: <strong id="cum-attempted">0.00</strong></span>
-          <span>Earned: <strong id="cum-earned">0.00</strong></span>
-          <span>GPA Hours: <strong id="cum-gpa-hours">0.00</strong></span>
-          <span>Quality Points: <strong id="cum-quality">0.00</strong></span>
-          <span>Cumulative GPA: <strong id="cum-gpa">0.00</strong></span>
+          <span><strong data-i18n-key="cumTotalsTitle">Cumulative Totals</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineAttempted"></span><strong id="cum-attempted">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineEarned"></span><strong id="cum-earned">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineGpaHours"></span><strong id="cum-gpa-hours">0.00</strong></span>
+          <span><span class="totals-line-label" data-i18n-key="lineQuality"></span><strong id="cum-quality">0.00</strong></span>
+          <span><span class="totals-line-label totals-line-label--inline" data-i18n-key="lineCumGpa"></span><span class="cum-gpa-value-line"><strong id="cum-gpa-domestic" style="display:none">—</strong><span class="cum-gpa-sep" style="display:none"> / </span><strong id="cum-gpa">0.00</strong></span></span>
         </div>
         <p class="standing" data-edit-label="Academic Standing" data-computed="true"><span class="inline-edit-target">Academic Standing: Example (demo band)</span></p>
         <p class="standing-disclaimer notranslate" translate="no" data-protected="true">Academic Standing is estimated from cumulative GPA using simple demonstration bands in this tool. For layout and sample use only; not an official academic status from any school or authority.</p>
       </section>
 
       <section class="certification">
-        <p class="warning-line notranslate" id="tamper-warning-line" translate="no" data-edit-label="Tamper Warning" data-protected="true">Unauthorized alteration is strictly prohibited.</p>
-        <p class="sample-line notranslate" id="legal-confirmation-line" translate="no" data-edit-label="Legal Confirmation" data-protected="true">I confirm this document is true and valid, and I accept all related legal responsibility.</p>
-        <p class="cert-meta" data-edit-label="Certification Institution Line"><span class="inline-edit-target">Institution: Example University, 123 Example Street, Example City, EX 00000</span></p>
-        <p class="cert-meta" data-edit-label="Issue And Digital Signature"><span class="inline-edit-target">Date of Issue: 01/02/2000 | Digital Signature Hash: SAMPLE-SIGNATURE-HASH-NOT-VALID</span></p>
+        <p class="warning-line notranslate" id="tamper-warning-line" translate="no" data-edit-label="Tamper Warning" data-protected="true"></p>
+        <p class="sample-line notranslate" id="legal-confirmation-line" translate="no" data-edit-label="Legal Confirmation" data-protected="true"></p>
+        <p class="cert-meta" data-edit-label="Certification Institution Line" data-cert-institution-auto="true"><span class="inline-edit-target">Institution: Example University, 123 University Way, College Town, CA 90210, United States</span></p>
+        <p class="cert-meta" data-edit-label="Issue And Digital Signature" data-issue-signature-auto="true"><span class="inline-edit-target"></span></p>
         <div class="signature-row">
-          <div class="sign-box"><span data-edit-label="Signature Label"><span class="inline-edit-target">Registrar's Personal Signature</span></span></div>
-          <div class="sign-box sign-ssn-box">
+          <div class="sign-box" data-signature-protected="true"><span data-edit-label="Signature Label"><span class="inline-edit-target">Registrar's Personal Signature</span></span></div>
+          <div class="sign-box sign-ssn-box" data-signature-protected="true">
             <span id="personal-ssn-label" class="sign-label-fixed" data-protected="true">Government ID (18-digit)</span><span id="personal-ssn-display" class="sign-ssn-display notranslate" translate="no" aria-hidden="true"></span>
           </div>
           <div class="sign-box sign-seal-box"><span id="university-seal" class="notranslate" translate="no" data-protected="true">University Seal
@@ -432,27 +547,31 @@
       </section>
 
       <section class="bottom-row">
-        <section class="scale notranslate" id="gpa-policy-scale" translate="no" data-protected="true">
-          <h3 id="gpa-scale-title">Grading Reference (Percent to GPA)</h3>
+        <div class="scale-column">
+          <section class="scale notranslate" id="gpa-policy-scale" translate="no" data-protected="true">
+            <h3 id="gpa-scale-title">Grading Reference (Percent to GPA)</h3>
 
-          <h4 class="scale-subheading" id="percent-letter-heading">Letter-grade ladder (authoritative for calculations)</h4>
-          <table id="percent-letter-scale-table" class="scale-ref-table">
-            <thead>
-              <tr><th>Percent Score</th><th>Letter Grade</th><th>Grade Point</th></tr>
-            </thead>
-            <tbody id="grade-ladder-transcript-tbody"></tbody>
-          </table>
+            <h4 class="scale-subheading" id="percent-letter-heading">Letter-grade ladder (authoritative for calculations)</h4>
+            <table id="percent-letter-scale-table" class="scale-ref-table">
+              <thead>
+                <tr>
+                  <th data-i18n-key="gpaScaleTh" data-i18n-idx="0">Percent band · CN tier ref</th>
+                  <th data-i18n-key="gpaScaleTh" data-i18n-idx="1">Ladder grade</th>
+                  <th data-i18n-key="gpaScaleTh" data-i18n-idx="2">Grade Point</th>
+                </tr>
+              </thead>
+              <tbody id="grade-ladder-transcript-tbody"></tbody>
+            </table>
+          </section>
 
-          <p class="conversion-note" id="conversion-note-1">
-            <strong>Computation.</strong> Per row, enter <strong>percent score (0–100)</strong> and <strong>credits earned</strong> only. <strong>Grade point</strong> and <strong>letter grade</strong> are read exclusively from the ladder above (not manually assigned). <strong>Quality points</strong> = grade point × credits. <strong>Term GPA</strong> = sum of quality points ÷ sum of credits for that term. <strong>Cumulative GPA</strong> = sum of quality points ÷ sum of credits across all terms shown. Course type, course number, and description are for identification only and do not enter the GPA formula.
-          </p>
-          <p class="conversion-note" id="conversion-note-2">
-            <strong>Disclaimer.</strong> This ladder is illustrative for this sample only. It is not official grading policy and does not supersede registrar records, degree rules, or institutional policy.
-          </p>
-          <p class="conversion-note" id="conversion-note-3">
-            <strong>Transfer credit.</strong> Final recognition of courses and credits rests solely with the receiving institution, including its review of contact hours, syllabus equivalence, and applicable policy.
-          </p>
-        </section>
+          <p id="grade-scale-disclaimer" class="grade-scale-disclaimer" hidden translate="yes"></p>
+
+          <div class="scale-footnotes">
+            <div class="grade-scale-disclaimer" id="conversion-note-1" translate="yes"></div>
+            <div class="grade-scale-disclaimer" id="conversion-note-2" translate="yes"></div>
+            <div class="grade-scale-disclaimer" id="conversion-note-3" translate="yes"></div>
+          </div>
+        </div>
 
         <div class="authorization-area notranslate" translate="no">
           <section class="authorization-box">
@@ -464,11 +583,15 @@
       </section>
 
       <footer class="end-note" id="transcript-end-note" data-protected="true">For personal use only. This document is true and valid.</footer>
+      <p id="transcript-non-official-disclaimer" class="transcript-non-official-disclaimer notranslate" translate="no" data-protected="true" aria-live="polite"></p>
     </article>
   </main>
 
+  <button type="button" id="transcript-scroll-top-btn" class="transcript-scroll-top-btn" hidden aria-label="Back to top">↑</button>
+
   <script src="./qrcode.min.js"></script>
   <script src="./html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="./i18n.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <script src="./script.js"></script>
